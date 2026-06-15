@@ -706,9 +706,9 @@
 
         let MASTER_QUIZZES = [];
 
-        // Avatar images: upload your 40 avatar files as 1.jpeg, 2.jpeg ... 40.jpeg inside an "avatars" folder
-        // placed alongside this index.html (i.e. avatars/1.jpeg ... avatars/40.jpeg)
-        const AVATARS = Array.from({ length: 40 }, (_, i) => `avatars/${i + 1}.jpeg`);
+        // Avatar images: upload your 40 avatar files as 1.jpeg, 2.jpeg ... 40.jpeg
+        // in the SAME folder as this index.html
+        const AVATARS = Array.from({ length: 40 }, (_, i) => `${i + 1}.jpeg`);
 
         const setImgSrc = (elId, src) => {
             const el = document.getElementById(elId);
