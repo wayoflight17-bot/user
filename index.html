@@ -126,7 +126,7 @@
         <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
             <div class="flex items-center gap-3 cursor-pointer" onclick="window.switchView('view-dashboard')">
                 <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200 overflow-hidden relative">
-                    <img id="app-dynamic-logo" src="" class="hidden w-full h-full object-cover absolute inset-0 z-10 bg-white">
+                    <img id="app-dynamic-logo" src="" onerror="this.classList.add('hidden'); document.getElementById('app-default-logo').classList.remove('hidden');" class="hidden w-full h-full object-cover absolute inset-0 z-10 bg-white">
                     <svg id="app-default-logo" class="w-6 h-6 text-white relative z-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                 </div>
                 <h1 class="font-extrabold text-xl tracking-tight text-slate-800 hidden sm:block app-title-text">Way of Light</h1>
@@ -156,7 +156,7 @@
             <div class="glass p-10 rounded-[2.5rem] shadow-2xl text-center">
                 <div class="mb-6">
                     <div class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-indigo-100 overflow-hidden relative">
-                        <img id="app-dynamic-logo-large" src="" class="hidden w-full h-full object-cover absolute inset-0 z-10 bg-white">
+                        <img id="app-dynamic-logo-large" src="" onerror="this.classList.add('hidden'); document.getElementById('app-default-logo-large').classList.remove('hidden');" class="hidden w-full h-full object-cover absolute inset-0 z-10 bg-white">
                         <svg id="app-default-logo-large" class="w-10 h-10 relative z-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                     </div>
                     <h2 class="text-3xl font-black text-slate-900 mb-2">Portal Access</h2>
@@ -706,13 +706,9 @@
 
         let MASTER_QUIZZES = [];
 
-        const avatarSeeds = [
-            "Aisha", "Fatima", "Zainab", "Khadija", "Mariam", "Safiya", "Hafsa", "Omar", "Ali", "Tariq", 
-            "Hassan", "Yusuf", "Bilal", "Ibrahim", "Hamza", "Felix", "Aneka", "Jack", "Luna", "Leo", 
-            "Zoe", "Milo", "Bella", "Sophia", "Ethan", "Oliver", "Emma", "Ava", "Noah", "Liam",
-            "Mei", "Chen", "Raj", "Priya", "Kwame", "Amara", "Diego", "Sofia", "Mateo", "Valentina"
-        ];
-        const AVATARS = avatarSeeds.map(seed => `https://api.dicebear.com/9.x/avataaars/svg?seed=${seed}&backgroundColor=e2e8f0,c0aede,d1d4f9,ffdfbf,ffd5dc`);
+        // Avatar images: upload your 40 avatar files as 1.jpeg, 2.jpeg ... 40.jpeg inside an "avatars" folder
+        // placed alongside this index.html (i.e. avatars/1.jpeg ... avatars/40.jpeg)
+        const AVATARS = Array.from({ length: 40 }, (_, i) => `avatars/${i + 1}.jpeg`);
 
         const setImgSrc = (elId, src) => {
             const el = document.getElementById(elId);
@@ -1056,7 +1052,7 @@
                 const isSelected = tempOnboardAvatar === url;
                 return `
                 <div class="avatar-option rounded-2xl bg-white p-1 shadow-sm ${isSelected ? 'selected' : ''}" onclick="window.selectOnboardAvatar('${url}')">
-                    <img src="${url}" class="w-full rounded-xl bg-slate-50 object-cover aspect-square" crossorigin="anonymous">
+                    <img src="${url}" class="w-full rounded-xl bg-slate-50 object-cover aspect-square">
                 </div>`;
             }).join('');
             
@@ -1162,16 +1158,16 @@
                         document.title = globalData.config.webName;
                         document.querySelectorAll('.app-title-text').forEach(el => el.innerText = globalData.config.webName);
                     }
-                    if(globalData.config.logoUrl) {
-                        setImgSrc('app-dynamic-logo', globalData.config.logoUrl);
-                        document.getElementById('app-dynamic-logo').classList.remove('hidden');
-                        document.getElementById('app-default-logo').classList.add('hidden');
-                        
-                        setImgSrc('app-dynamic-logo-large', globalData.config.logoUrl);
-                        document.getElementById('app-dynamic-logo-large').classList.remove('hidden');
-                        document.getElementById('app-default-logo-large').classList.add('hidden');
-                    }
                 }
+
+                const logoSrc = (globalData.config && globalData.config.logoUrl) || 'logo.jpeg';
+                setImgSrc('app-dynamic-logo', logoSrc);
+                document.getElementById('app-dynamic-logo').classList.remove('hidden');
+                document.getElementById('app-default-logo').classList.add('hidden');
+
+                setImgSrc('app-dynamic-logo-large', logoSrc);
+                document.getElementById('app-dynamic-logo-large').classList.remove('hidden');
+                document.getElementById('app-default-logo-large').classList.add('hidden');
             });
 
             onAuthStateChanged(auth, async (user) => {
@@ -1487,7 +1483,7 @@
                 const isSelected = tempAvatar === url;
                 return `
                 <div class="avatar-option rounded-2xl bg-white p-1 shadow-sm ${isSelected ? 'selected' : ''}" onclick="window.selectAvatar('${url}')">
-                    <img src="${url}" class="w-full rounded-xl bg-slate-50 object-cover aspect-square" crossorigin="anonymous">
+                    <img src="${url}" class="w-full rounded-xl bg-slate-50 object-cover aspect-square">
                 </div>`;
             }).join('');
             
