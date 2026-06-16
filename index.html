@@ -189,6 +189,10 @@
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                         Home
                     </button>
+                    <button onclick="window.switchView('view-certificates')" id="nav-tab-certificates" class="nav-tab">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        Certificates
+                    </button>
                     <button onclick="window.switchView('view-people')" id="nav-tab-people" class="nav-tab">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                         People
@@ -198,6 +202,9 @@
                     <svg class="w-3.5 h-3.5 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0"/></svg>
                     <span id="nav-enrollment-id" class="text-xs font-black text-indigo-700 font-mono tracking-wide">--</span>
                 </div>
+                <button onclick="window.switchView('view-certificates')" class="md:hidden w-9 h-9 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors" title="Certificates">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                </button>
                 <button onclick="window.switchView('view-people')" class="md:hidden w-9 h-9 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors" title="People">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 </button>
@@ -397,6 +404,10 @@
                     <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Student ID</div>
                     <div class="text-lg font-black text-slate-700 font-mono" id="stat-student-id">--</div>
                 </div>
+                <div class="stat-chip cursor-pointer hover:shadow-md transition-shadow" onclick="window.switchView('view-certificates')" title="View your certificates">
+                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">🎓 Certificates</div>
+                    <div class="text-2xl font-black text-amber-600" id="stat-cert-count">0</div>
+                </div>
             </div>
 
             <!-- Main Content Area -->
@@ -533,6 +544,25 @@
             </div>
         </div>
 
+        <!-- COPY-CHEAT WARNING OVERLAY -->
+        <div id="cheat-warning-overlay" class="hidden-view fixed inset-0 z-[70] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="cheat-card bg-white rounded-[2.5rem] p-8 text-center shadow-2xl w-full max-w-sm border-4 border-amber-400">
+                <div id="cheat-warn-icon" class="text-5xl mb-3">⚠️</div>
+                <h3 id="cheat-warn-title" class="text-2xl font-black text-amber-600 mb-2">Warning 1 of 2</h3>
+                <p id="cheat-warn-msg" class="text-sm text-slate-600 font-medium mb-4 leading-relaxed">Copying is strictly prohibited during the exam. This violation has been recorded.</p>
+                <div id="cheat-warn-counter" class="flex justify-center mb-1">
+                    <span class="inline-flex gap-2">
+                        <span class="w-3 h-3 rounded-full bg-amber-400"></span>
+                        <span class="w-3 h-3 rounded-full bg-slate-200"></span>
+                    </span>
+                </div>
+                <p class="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-5">Violation count</p>
+                <button id="cheat-warn-btn" onclick="window.dismissCheatWarning()" class="mt-2 px-8 py-3 bg-amber-500 text-white font-black rounded-2xl hover:bg-amber-600 transition-colors cursor-pointer w-full">
+                    I Understand — Return to Exam
+                </button>
+            </div>
+        </div>
+
         <!-- REVIEW RESULTS -->
         <div id="view-review" class="hidden-view fade-in max-w-4xl mx-auto py-6 space-y-6">
             <button onclick="window.switchView('view-dashboard')" class="px-4 py-2 bg-white border border-slate-200 text-sm font-bold text-slate-600 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm">
@@ -588,73 +618,166 @@
         </div>
     </div>
 
-    <!-- PROFILE VIEW (viewing another user) -->
-    <div id="view-profile" class="hidden-view fade-in max-w-3xl mx-auto px-4 py-8 space-y-6">
-        <button onclick="window.goBackFromProfile()" class="px-4 py-2 bg-white border border-slate-200 text-sm font-bold text-slate-600 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm">
-            ← Back
-        </button>
-        <div class="profile-view-header text-white">
-            <div class="relative z-10 flex flex-col sm:flex-row items-center sm:items-end gap-6">
-                <img id="pv-avatar" src="" class="w-28 h-28 rounded-full border-4 border-white/30 shadow-xl object-cover bg-white/10">
-                <div class="text-center sm:text-left flex-1">
-                    <h2 class="text-3xl font-black mb-1" id="pv-name">Name</h2>
-                    <div class="flex flex-wrap justify-center sm:justify-start gap-2 mb-3">
-                        <span class="text-xs font-black bg-white/20 px-3 py-1 rounded-full" id="pv-rank">Novice</span>
-                        <span class="text-xs font-mono font-black bg-white/20 px-3 py-1 rounded-full" id="pv-eid"></span>
-                    </div>
-                    <button id="pv-follow-btn" onclick="window.toggleFollowProfile()" class="follow-btn follow text-sm px-5 py-2">Follow</button>
-                </div>
-                <div class="flex gap-4">
-                    <div class="social-pill" onclick="">
-                        <span class="text-2xl font-black" id="pv-followers">0</span>
-                        <span class="text-[9px] font-black uppercase tracking-widest text-indigo-200">Followers</span>
-                    </div>
-                    <div class="social-pill">
-                        <span class="text-2xl font-black" id="pv-following">0</span>
-                        <span class="text-[9px] font-black uppercase tracking-widest text-indigo-200">Following</span>
-                    </div>
-                    <div class="social-pill">
-                        <span class="text-2xl font-black" id="pv-xp">0</span>
-                        <span class="text-[9px] font-black uppercase tracking-widest text-indigo-200">XP</span>
-                    </div>
-                </div>
-            </div>
+    <!-- CERTIFICATES VIEW -->
+    <div id="view-certificates" class="hidden-view fade-in max-w-5xl mx-auto px-4 py-8 space-y-8">
+        <div>
+            <h2 class="text-2xl font-black text-slate-900">My Certificates</h2>
+            <p class="text-slate-500 text-sm font-medium mt-1">Each certificate has a unique Certificate ID. Share it — anyone can verify it's genuine and not a duplicate.</p>
         </div>
-        <!-- Profile Stats -->
-        <div class="grid grid-cols-3 gap-4">
-            <div class="stat-chip">
-                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Tests Taken</div>
-                <div class="text-2xl font-black text-indigo-600" id="pv-tests">0</div>
-            </div>
-            <div class="stat-chip">
-                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Best Score</div>
-                <div class="text-2xl font-black text-emerald-600" id="pv-best">0 XP</div>
-            </div>
-            <div class="stat-chip">
-                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Global Rank</div>
-                <div class="text-2xl font-black text-amber-600" id="pv-global-rank">#--</div>
-            </div>
+
+        <div id="my-cert-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <!-- Injected via JS -->
         </div>
-        <!-- Recent Activity -->
-        <div class="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
-                <span class="w-2.5 h-2.5 bg-indigo-500 rounded-full"></span>
-                <h3 class="font-black text-slate-800">Recent Activity</h3>
+        <div id="my-cert-empty" class="hidden-view text-center py-16 bg-white rounded-3xl border border-slate-200">
+            <div class="text-5xl mb-3">🎓</div>
+            <p class="font-bold text-slate-500">No certificates issued yet</p>
+            <p class="text-sm text-slate-400 mt-1">Your admin will issue certificates here as you earn them.</p>
+        </div>
+
+        <!-- Verify a Certificate -->
+        <div class="bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-200 shadow-sm">
+            <h3 class="font-black text-lg text-slate-800 mb-1">🔍 Verify a Certificate</h3>
+            <p class="text-sm text-slate-500 mb-5">Enter any Certificate ID to confirm who it genuinely belongs to.</p>
+            <div class="flex flex-col sm:flex-row gap-3">
+                <input type="text" id="verify-cert-input" placeholder="e.g. CERT-2026-0001" onkeydown="if(event.key==='Enter') window.verifyCertificate()" class="flex-1 px-4 py-3.5 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none font-mono font-bold text-slate-700 tracking-wider uppercase">
+                <button onclick="window.verifyCertificate()" class="px-6 py-3.5 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 transition-all shadow-md active:scale-95">Verify</button>
             </div>
-            <div id="pv-activity" class="p-4 space-y-3">
-                <!-- injected -->
-            </div>
+            <div id="verify-cert-result" class="mt-5"></div>
         </div>
     </div>
 
-    <!-- FOLLOWERS / FOLLOWING MODAL -->
-    <div id="modal-social" class="hidden-view fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto" onclick="if(event.target===this) window.closeSocialModal()">
-        <div class="w-full max-w-sm bg-white rounded-[2.5rem] overflow-hidden shadow-2xl my-8">
-            <div class="p-5 border-b border-slate-100 flex justify-between items-center">
-                <h3 class="text-lg font-black text-slate-800" id="social-modal-title">Followers</h3>
-                <button onclick="window.closeSocialModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-rose-100 hover:text-rose-600 transition-colors font-bold">✕</button>
+    <!-- PROFILE VIEW — Instagram style -->
+    <div id="view-profile" class="hidden-view fade-in max-w-2xl mx-auto px-4 py-6">
+
+        <!-- Top nav bar -->
+        <div class="flex items-center justify-between mb-6">
+            <button onclick="window.goBackFromProfile()" class="w-10 h-10 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <h2 class="font-black text-slate-800 text-base" id="pv-topbar-name">Profile</h2>
+            <div id="pv-options-btn" class="w-10 h-10 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-500 cursor-pointer hover:bg-slate-50 shadow-sm transition-all" onclick="window.openProfile()" title="Edit Profile" style="display:none">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             </div>
-            <div id="social-modal-list" class="max-h-96 overflow-y-auto p-4 space-y-3">
+            <div id="pv-options-placeholder" class="w-10 h-10"></div>
+        </div>
+
+        <!-- Avatar + Stats Row (Instagram layout) -->
+        <div class="flex items-start gap-6 mb-5 px-1">
+            <!-- Avatar with ring -->
+            <div class="relative shrink-0">
+                <div id="pv-avatar-ring" class="p-[3px] rounded-full bg-gradient-to-tr from-amber-400 via-rose-500 to-purple-600">
+                    <div class="bg-white p-[3px] rounded-full">
+                        <img id="pv-avatar" src="" class="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover bg-slate-100 block">
+                    </div>
+                </div>
+                <div id="pv-rank-badge" class="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-black px-2 py-0.5 rounded-full whitespace-nowrap border border-white shadow rank-novice">Novice</div>
+            </div>
+
+            <!-- Stats -->
+            <div class="flex-1 min-w-0">
+                <div class="grid grid-cols-3 gap-1 sm:gap-3 mb-4">
+                    <button onclick="window.openProfileSocialModal('posts')" class="text-center hover:opacity-70 transition-opacity">
+                        <div class="text-xl sm:text-2xl font-black text-slate-900" id="pv-tests">0</div>
+                        <div class="text-[10px] font-semibold text-slate-500 mt-0.5">Tests</div>
+                    </button>
+                    <button onclick="window.openProfileSocialModal('followers')" class="text-center hover:opacity-70 transition-opacity">
+                        <div class="text-xl sm:text-2xl font-black text-slate-900" id="pv-followers">0</div>
+                        <div class="text-[10px] font-semibold text-slate-500 mt-0.5">Followers</div>
+                    </button>
+                    <button onclick="window.openProfileSocialModal('following')" class="text-center hover:opacity-70 transition-opacity">
+                        <div class="text-xl sm:text-2xl font-black text-slate-900" id="pv-following">0</div>
+                        <div class="text-[10px] font-semibold text-slate-500 mt-0.5">Following</div>
+                    </button>
+                </div>
+
+                <!-- Follow / Edit buttons -->
+                <div class="flex gap-2" id="pv-action-row">
+                    <button id="pv-follow-btn" onclick="window.toggleFollowProfile()" class="flex-1 py-2 rounded-xl text-sm font-black bg-indigo-600 text-white hover:bg-indigo-700 transition-all active:scale-95 shadow-sm">Follow</button>
+                    <button id="pv-message-btn" onclick="window.openProfile()" class="flex-1 py-2 rounded-xl text-sm font-black bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all border border-slate-200 hidden">Edit Profile</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bio section -->
+        <div class="px-1 mb-5">
+            <div class="font-black text-slate-900 text-sm" id="pv-name">Name</div>
+            <div class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mt-0.5" id="pv-eid"></div>
+            <div class="text-sm text-slate-600 mt-2 leading-relaxed whitespace-pre-line" id="pv-bio"></div>
+            <!-- XP + Rank inline -->
+            <div class="flex flex-wrap gap-2 mt-3">
+                <span class="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 text-xs font-black px-3 py-1 rounded-full border border-indigo-100">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    <span id="pv-xp">0</span> XP
+                </span>
+                <span class="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 text-xs font-black px-3 py-1 rounded-full border border-amber-100">
+                    🏆 Rank <span id="pv-global-rank">#--</span>
+                </span>
+                <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-black px-3 py-1 rounded-full border border-emerald-100">
+                    ⭐ Best: <span id="pv-best">0 XP</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Certificates summary (only shown if this user holds any active certificates) -->
+        <div id="pv-certs-section" class="px-1 mb-5 hidden-view">
+            <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">🎓 Verified Certificates</div>
+            <div id="pv-certs-list" class="flex flex-col gap-2"></div>
+        </div>
+
+        <!-- Divider -->
+        <div class="border-t border-slate-200 mb-0"></div>
+
+        <!-- Tabs: Grid / Activity -->
+        <div class="flex border-b border-slate-200 mb-0">
+            <button onclick="window.setPvTab('grid')" id="pv-tab-grid" class="flex-1 py-3 flex items-center justify-center gap-1.5 text-xs font-black uppercase tracking-widest text-indigo-600 border-b-2 border-indigo-600 transition-all">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h7v7H3zm0 11h7v7H3zm11-11h7v7h-7zm0 11h7v7h-7z"/></svg>
+                Tests
+            </button>
+            <button onclick="window.setPvTab('activity')" id="pv-tab-activity" class="flex-1 py-3 flex items-center justify-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-400 border-b-2 border-transparent transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                Activity
+            </button>
+        </div>
+
+        <!-- Test Grid (like Instagram posts) -->
+        <div id="pv-tab-grid-content">
+            <div id="pv-test-grid" class="grid grid-cols-3 gap-0.5 bg-slate-100">
+                <!-- injected -->
+            </div>
+            <div id="pv-test-empty" class="hidden-view py-16 text-center">
+                <div class="text-5xl mb-3">📚</div>
+                <p class="font-bold text-slate-400">No tests taken yet</p>
+            </div>
+        </div>
+
+        <!-- Activity Feed -->
+        <div id="pv-tab-activity-content" class="hidden-view p-4 space-y-3">
+            <div id="pv-activity"><!-- injected --></div>
+        </div>
+
+    </div>
+
+    <!-- FOLLOWERS / FOLLOWING MODAL — Instagram style with tabs -->
+    <div id="modal-social" class="hidden-view fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center" onclick="if(event.target===this) window.closeSocialModal()">
+        <div class="w-full sm:max-w-md bg-white sm:rounded-[2rem] rounded-t-[2rem] overflow-hidden shadow-2xl max-h-[85vh] flex flex-col">
+            <!-- Tab header -->
+            <div class="flex border-b border-slate-100 relative">
+                <button onclick="window.switchSocialTab('followers')" id="social-tab-followers" class="flex-1 py-4 text-sm font-black text-slate-800 border-b-2 border-slate-900 transition-all">
+                    <span id="social-tab-followers-count">0</span> Followers
+                </button>
+                <button onclick="window.switchSocialTab('following')" id="social-tab-following" class="flex-1 py-4 text-sm font-black text-slate-400 border-b-2 border-transparent transition-all">
+                    <span id="social-tab-following-count">0</span> Following
+                </button>
+                <button onclick="window.closeSocialModal()" class="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors text-lg">✕</button>
+            </div>
+            <!-- Search inside modal -->
+            <div class="px-4 pt-3 pb-2">
+                <div class="relative">
+                    <input type="text" id="social-modal-search" oninput="window.filterSocialModal()" placeholder="Search…" class="w-full px-4 py-2.5 pl-9 rounded-xl bg-slate-100 text-sm font-bold text-slate-700 outline-none border-2 border-transparent focus:border-indigo-300 transition-all">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+                </div>
+            </div>
+            <div id="social-modal-list" class="overflow-y-auto flex-1 p-2 space-y-1">
                 <!-- injected -->
             </div>
         </div>
@@ -672,7 +795,8 @@
             <h3 class="text-2xl font-black text-slate-900 mb-2">Anti-Cheat Active</h3>
             <div class="text-sm text-slate-600 font-medium space-y-3 mb-8 bg-rose-50 p-4 rounded-2xl border border-rose-100 text-left">
                 <p class="flex items-start gap-2">⚠️ <span><strong>Fullscreen Required:</strong> The exam runs in fullscreen mode. If you exit fullscreen or switch tabs, a 15-second warning timer starts — return in time and your exam continues. If time runs out, your exam will be submitted automatically.</span></p>
-                <p class="flex items-start gap-2">⚠️ <span><strong>No Copy/Paste:</strong> Text selection, right-click, and clipboard operations are strictly disabled.</span></p>
+                <p class="flex items-start gap-2">🚨 <span><strong>3-Strike Copy Rule:</strong> Any copy, cut, paste, or right-click attempt is tracked. You get <strong>2 warnings</strong>. On the <strong>3rd attempt</strong>, your exam is auto-submitted and flagged as <strong>"Cheating Attempted"</strong>.</span></p>
+                <p class="flex items-start gap-2">⛔ <span><strong>All Shortcuts Blocked:</strong> Ctrl+C/V/X/A, F12, and PrintScreen are fully disabled.</span></p>
                 <p class="flex items-start gap-2">✅ <span><strong>Auto-Save Enabled:</strong> Your answers are saved automatically as you go. If your browser closes or crashes, you can log back in and resume where you left off (as long as time remains).</span></p>
             </div>
             <div class="flex gap-4">
@@ -700,6 +824,10 @@
                         <div>
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Display Name</label>
                             <input id="profile-name" type="text" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none transition-colors font-bold text-slate-700">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Bio <span class="normal-case font-medium">(optional)</span></label>
+                            <textarea id="profile-bio" rows="3" placeholder="Tell others about yourself…" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none transition-colors font-medium text-slate-700 resize-none text-sm"></textarea>
                         </div>
                         <div>
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Email Address (Read-only)</label>
@@ -740,6 +868,9 @@
             <div id="share-card" class="share-card-wrapper p-10 text-white text-center relative overflow-hidden">
                 <div id="promotion-badge" class="hidden-view absolute top-6 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-yellow-500 text-yellow-900 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-xl animate-bounce z-20 border border-yellow-200">
                     Rank Up Achieved!
+                </div>
+                <div id="achieve-cheat-banner" class="hidden-view absolute top-6 left-1/2 -translate-x-1/2 bg-gradient-to-r from-red-600 to-rose-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-xl z-20 border border-red-400 whitespace-nowrap">
+                    ⚑ Cheating Attempted — Flagged for Review
                 </div>
 
                 <div class="w-24 h-24 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-white/30 relative z-10 shadow-2xl mt-4">
@@ -843,6 +974,20 @@
         </div>
     </div>
 
+    <!-- CERTIFICATE FILE VIEWER MODAL -->
+    <div id="modal-cert-view" class="hidden-view fixed inset-0 z-[85] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4" onclick="if(event.target===this) window.closeCertViewModal()">
+        <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div class="p-6 border-b border-slate-200 flex justify-between items-center shrink-0">
+                <h3 class="text-lg font-black text-slate-900 truncate pr-3" id="cert-modal-title">Certificate</h3>
+                <button onclick="window.closeCertViewModal()" class="w-9 h-9 shrink-0 flex items-center justify-center bg-slate-200 hover:bg-rose-100 hover:text-rose-600 rounded-full font-bold transition-colors">✕</button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 bg-slate-50 flex items-center justify-center" id="cert-modal-body"></div>
+            <div class="p-4 border-t border-slate-200">
+                <a id="cert-modal-download" href="#" download="certificate" class="block w-full text-center py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors">⬇ Download</a>
+            </div>
+        </div>
+    </div>
+
     <div id="toast" class="toast bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl font-bold flex items-center gap-3 border border-slate-700">
         <span id="toast-icon" class="text-xl">✨</span>
         <span id="toast-msg">Notification</span>
@@ -881,7 +1026,7 @@
         let userData = null; 
         let pendingGoogleUser = null; 
         let authMethod = null;
-        let globalData = { users: {}, results: [], quizzes: [], config: {}, seasons: [] };
+        let globalData = { users: {}, results: [], quizzes: [], config: {}, seasons: [], certificates: [] };
         let activeSession = null;
         let unsubscribes = [];
         let tempPendingQuizId = null; 
@@ -977,17 +1122,159 @@
             }
         };
 
-        // --- ENHANCED ANTI-CHEAT LISTENERS ---
-        document.addEventListener('contextmenu', e => { 
-            if(activeSession) { e.preventDefault(); showToast("⚠️ Right-click disabled during exam.", "🚫"); } 
+        // --- ENHANCED ANTI-CHEAT SYSTEM ---
+
+        // Copy-cheat tracking: 2 warnings, 3rd = auto-submit
+        let cheatAttempts = 0;   // counts copy/paste/cut/right-click violations
+        const MAX_CHEAT_WARNINGS = 2; // warnings before auto-submit on 3rd
+
+        const recordCheatAttempt = (reason) => {
+            if (!activeSession) return;
+            cheatAttempts++;
+            activeSession.violations = activeSession.violations || [];
+            activeSession.violations.push({ reason, at: Date.now(), attempt: cheatAttempts });
+
+            if (cheatAttempts > MAX_CHEAT_WARNINGS) {
+                // 3rd+ attempt — auto-submit immediately
+                activeSession.cheatingFlagged = true;
+                showCheatAlert('final');
+                setTimeout(() => {
+                    window.submitExam(true); // pass flag
+                }, 2500);
+            } else {
+                // Warning 1 or 2
+                showCheatAlert(cheatAttempts);
+            }
+        };
+
+        const showCheatAlert = (level) => {
+            const overlay = document.getElementById('cheat-warning-overlay');
+            const icon = document.getElementById('cheat-warn-icon');
+            const title = document.getElementById('cheat-warn-title');
+            const msg = document.getElementById('cheat-warn-msg');
+            const counter = document.getElementById('cheat-warn-counter');
+            const btn = document.getElementById('cheat-warn-btn');
+
+            if (level === 1) {
+                icon.innerText = '⚠️';
+                icon.className = 'text-5xl mb-3';
+                overlay.querySelector('.cheat-card').className = 'cheat-card bg-white rounded-[2.5rem] p-8 text-center shadow-2xl w-full max-w-sm border-4 border-amber-400';
+                title.innerText = 'Warning 1 of 2';
+                title.className = 'text-2xl font-black text-amber-600 mb-2';
+                msg.innerText = 'Copying is strictly prohibited during the exam. This violation has been recorded.';
+                counter.innerHTML = '<span class="inline-flex gap-2"><span class="w-3 h-3 rounded-full bg-amber-400"></span><span class="w-3 h-3 rounded-full bg-slate-200"></span></span>';
+                btn.className = 'mt-6 px-8 py-3 bg-amber-500 text-white font-black rounded-2xl hover:bg-amber-600 transition-colors cursor-pointer';
+                btn.innerText = 'I Understand — Return to Exam';
+            } else if (level === 2) {
+                icon.innerText = '🚨';
+                icon.className = 'text-5xl mb-3 animate-bounce';
+                overlay.querySelector('.cheat-card').className = 'cheat-card bg-white rounded-[2.5rem] p-8 text-center shadow-2xl w-full max-w-sm border-4 border-rose-500';
+                title.innerText = 'Final Warning — 2 of 2';
+                title.className = 'text-2xl font-black text-rose-600 mb-2';
+                msg.innerText = 'This is your LAST warning. One more copy attempt will immediately submit your exam and flag your result for review.';
+                counter.innerHTML = '<span class="inline-flex gap-2"><span class="w-3 h-3 rounded-full bg-rose-500"></span><span class="w-3 h-3 rounded-full bg-rose-500"></span></span>';
+                btn.className = 'mt-6 px-8 py-3 bg-rose-600 text-white font-black rounded-2xl hover:bg-rose-700 transition-colors cursor-pointer';
+                btn.innerText = 'I Will Not Copy — Continue';
+            } else {
+                // Final — auto-submit in 2.5s
+                icon.innerText = '🛑';
+                icon.className = 'text-6xl mb-3';
+                overlay.querySelector('.cheat-card').className = 'cheat-card bg-white rounded-[2.5rem] p-8 text-center shadow-2xl w-full max-w-sm border-4 border-red-700';
+                title.innerText = 'Exam Terminated';
+                title.className = 'text-2xl font-black text-red-700 mb-2';
+                msg.innerText = 'You attempted to copy again after two warnings. Your exam is being submitted automatically and flagged for CHEATING.';
+                counter.innerHTML = '<span class="text-[10px] font-black text-red-600 uppercase tracking-widest bg-red-50 px-3 py-1.5 rounded-full border border-red-200">⚑ Cheating Flagged — Submitting…</span>';
+                btn.className = 'hidden';
+                // vibrate if supported
+                if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
+            }
+
+            overlay.classList.remove('hidden-view');
+        };
+
+        window.dismissCheatWarning = () => {
+            document.getElementById('cheat-warning-overlay').classList.add('hidden-view');
+        };
+
+        // Block copy / cut / paste
+        document.addEventListener('copy', e => {
+            if (!activeSession) return;
+            e.preventDefault();
+            recordCheatAttempt('copy');
         });
-        document.addEventListener('copy', e => { 
-            if(activeSession) { e.preventDefault(); showToast("⚠️ Copying is restricted.", "🚫"); } 
+        document.addEventListener('cut', e => {
+            if (!activeSession) return;
+            e.preventDefault();
+            recordCheatAttempt('cut');
         });
-        document.addEventListener('paste', e => { 
-            if(activeSession) { e.preventDefault(); showToast("⚠️ Pasting is restricted.", "🚫"); } 
+        document.addEventListener('paste', e => {
+            if (!activeSession) return;
+            e.preventDefault();
+            recordCheatAttempt('paste');
         });
-        
+
+        // Block right-click
+        document.addEventListener('contextmenu', e => {
+            if (!activeSession) return;
+            e.preventDefault();
+            recordCheatAttempt('right-click');
+        });
+
+        // Block keyboard shortcuts: Ctrl/Cmd + C/V/X/A/U/S/P, F12, PrintScreen
+        document.addEventListener('keydown', e => {
+            if (!activeSession) return;
+            const ctrl = e.ctrlKey || e.metaKey;
+
+            // Block text selection shortcuts
+            if (ctrl && ['c','v','x','a','u','s','p'].includes(e.key.toLowerCase())) {
+                e.preventDefault();
+                if (['c','x'].includes(e.key.toLowerCase())) {
+                    recordCheatAttempt(`keyboard-${e.key.toLowerCase()}`);
+                } else {
+                    showToast("⚠️ Keyboard shortcut disabled during exam.", "🚫");
+                }
+                return;
+            }
+            // Block F12 / DevTools
+            if (e.key === 'F12') {
+                e.preventDefault();
+                showToast("⚠️ Developer tools are disabled.", "🚫");
+                return;
+            }
+            // Block PrintScreen
+            if (e.key === 'PrintScreen') {
+                e.preventDefault();
+                // blank clipboard
+                if (navigator.clipboard) navigator.clipboard.writeText('').catch(()=>{});
+                showToast("⚠️ Screenshots are disabled.", "📵");
+                return;
+            }
+            // Block F5 / refresh
+            if (e.key === 'F5' || (ctrl && e.key === 'r')) {
+                e.preventDefault();
+                showToast("⚠️ Page refresh is disabled during exam.", "🚫");
+                return;
+            }
+        });
+
+        // Disable text selection on exam view
+        document.addEventListener('selectstart', e => {
+            if (activeSession) e.preventDefault();
+        });
+
+        // Detect DevTools via window size difference (heuristic)
+        let devToolsInterval = null;
+        const detectDevTools = () => {
+            const threshold = 160;
+            if (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold) {
+                if (activeSession) {
+                    showToast("⚠️ Developer tools detected! This is a violation.", "🚫");
+                    recordCheatAttempt('devtools-detected');
+                }
+            }
+        };
+
+        // Tab switch / fullscreen exit
         document.addEventListener('visibilitychange', () => {
             if(activeSession && document.hidden) {
                 startGracePeriod('tab');
@@ -1043,13 +1330,13 @@
         window.addEventListener('beforeunload', (e) => {
             if(activeSession) {
                 e.preventDefault();
-                e.returnValue = ''; 
+                e.returnValue = '';
             }
         });
         // ------------------------------------
 
         window.switchView = (id) => {
-            ['view-auth', 'view-onboarding', 'view-dashboard', 'view-exam', 'view-review', 'view-people', 'view-profile'].forEach(v => {
+            ['view-auth', 'view-onboarding', 'view-dashboard', 'view-exam', 'view-review', 'view-people', 'view-profile', 'view-certificates'].forEach(v => {
                 const el = document.getElementById(v);
                 if(el) el.classList.add('hidden-view');
             });
@@ -1060,7 +1347,7 @@
             }
 
             // Update nav tabs
-            ['dashboard', 'people'].forEach(tab => {
+            ['dashboard', 'people', 'certificates'].forEach(tab => {
                 const navTab = document.getElementById(`nav-tab-${tab}`);
                 if (navTab) {
                     navTab.className = id === `view-${tab}` ? 'nav-tab active' : 'nav-tab';
@@ -1079,6 +1366,10 @@
             // Render people when switching to people view
             if (id === 'view-people') {
                 window.renderPeople();
+            }
+            // Render certificates when switching to certificates view
+            if (id === 'view-certificates') {
+                window.renderMyCertificates();
             }
         };
 
@@ -1427,6 +1718,17 @@
                 globalData.seasons = snapshot.empty ? [] : snapshot.docs.map(d => ({id: d.id, ...d.data()}));
                 renderDashboard();
             }));
+
+            unsubscribes.push(onSnapshot(getPublicCol('exam_certificates'), snapshot => {
+                globalData.certificates = snapshot.empty ? [] : snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+                const myCertCount = currentUser ? globalData.certificates.filter(c => c.studentId === currentUser.uid).length : 0;
+                const chip = document.getElementById('stat-cert-count');
+                if (chip) chip.innerText = myCertCount;
+                if (!document.getElementById('view-certificates').classList.contains('hidden-view')) {
+                    window.renderMyCertificates();
+                }
+                if (viewingProfileUid) renderProfileCertSection(viewingProfileUid);
+            }));
         };
 
         const getActiveSeason = () => {
@@ -1678,6 +1980,8 @@
             tempAvatar = userData.avatar;
             document.getElementById('profile-name').value = userData.name;
             document.getElementById('profile-email').value = userData.email || '';
+            const bioEl = document.getElementById('profile-bio');
+            if (bioEl) bioEl.value = userData.bio || '';
             const profEid = document.getElementById('profile-enrollment-id');
             if(profEid) profEid.innerText = userData.enrollmentId || '--';
             setImgSrc('prof-avatar-preview', tempAvatar);
@@ -1713,13 +2017,15 @@
         window.saveProfile = async () => {
             const newName = document.getElementById('profile-name').value.trim();
             if(!newName) return showError("Name is required.", 'auth-error'); 
+            const newBio = (document.getElementById('profile-bio')?.value || '').trim();
             try {
                 await updateDoc(getPublicDoc('exam_users', currentUser.uid), {
                     name: newName,
-                    avatar: tempAvatar
+                    avatar: tempAvatar,
+                    bio: newBio
                 });
                 window.closeModal();
-                showToast("Identity Updated!", "🥷");
+                showToast("Profile Updated! ✨", "🥷");
             } catch(e) {
                 alert("Update failed. Check connection.");
             }
@@ -1865,6 +2171,10 @@
 
             document.getElementById('active-exam-title').innerText = activeSession.title;
             window.switchView('view-exam');
+            cheatAttempts = 0; // reset copy-cheat counter for new exam
+            // Start DevTools detection
+            if (devToolsInterval) clearInterval(devToolsInterval);
+            devToolsInterval = setInterval(detectDevTools, 3000);
 
             // Briefly show skeleton loader while the first question renders
             document.getElementById('question-skeleton').classList.remove('hidden-view');
@@ -1954,18 +2264,22 @@
             saveProgress();
         };
 
-        window.submitExam = async () => {
+        window.submitExam = async (cheatingFlagOverride = false) => {
             if(!activeSession) return;
             clearInterval(activeSession.intervalId);
             if(activeSession.graceTimerId) clearInterval(activeSession.graceTimerId);
             if(activeSession.saveIntervalId) clearInterval(activeSession.saveIntervalId);
+            if(devToolsInterval) { clearInterval(devToolsInterval); devToolsInterval = null; }
             document.getElementById('grace-period-overlay').classList.add('hidden-view');
+            document.getElementById('cheat-warning-overlay').classList.add('hidden-view');
             document.body.classList.remove('anti-cheat-active');
             
             // Gracefully exit fullscreen if possible
             if (document.fullscreenElement) {
                 document.exitFullscreen().catch(err => console.log(err));
             }
+            
+            const wasCheating = cheatingFlagOverride || activeSession.cheatingFlagged || false;
             
             let xpEarned = 0;
             const evaluatedAnswers = activeSession.questions.map((q, i) => {
@@ -1996,6 +2310,8 @@
                 details: evaluatedAnswers,
                 duration: activeSession.timerSecs,
                 violations: activeSession.violations || [],
+                cheatingFlagged: wasCheating,
+                cheatAttemptCount: cheatAttempts,
                 timestamp: Date.now()
             };
 
@@ -2023,7 +2339,7 @@
                 const promotedRank = newRankNum < oldRankNum;
                 const promotedLevel = newLevel.title !== oldLevel.title;
 
-                showAchievementPopup(savedTitle, xpEarned, newRankNum, newLevel, (promotedRank || promotedLevel), resultDoc.totalPossible);
+                showAchievementPopup(savedTitle, xpEarned, newRankNum, newLevel, (promotedRank || promotedLevel), resultDoc.totalPossible, wasCheating);
 
             } catch(e) {
                 alert("Error saving results. Check your connection.");
@@ -2039,13 +2355,23 @@
             return { letter: 'F', cls: 'grade-f', label: 'Needs Improvement' };
         };
 
-        const showAchievementPopup = (testTitle, score, newRank, levelObj, isPromoted, totalPossible = 0) => {
+        const showAchievementPopup = (testTitle, score, newRank, levelObj, isPromoted, totalPossible = 0, wasCheating = false) => {
             document.getElementById('achieve-name').innerText = userData.name;
             document.getElementById('achieve-avatar').src = userData.avatar || AVATARS[0];
             document.getElementById('achieve-test-name').innerText = testTitle;
             document.getElementById('achieve-score').innerText = `${score} XP`;
             document.getElementById('achieve-rank').innerText = `#${newRank}`;
             document.getElementById('achieve-level').innerText = levelObj.title;
+
+            // Cheating flag banner
+            const cheatBanner = document.getElementById('achieve-cheat-banner');
+            if (cheatBanner) {
+                if (wasCheating) {
+                    cheatBanner.classList.remove('hidden-view');
+                } else {
+                    cheatBanner.classList.add('hidden-view');
+                }
+            }
 
             // Enrollment ID on popup
             const achEid = document.getElementById('achieve-student-id');
@@ -2330,8 +2656,8 @@
 
             document.getElementById('pv-avatar').src = u.avatar || AVATARS[0];
             document.getElementById('pv-name').innerText = u.name;
-            document.getElementById('pv-rank').innerText = rankData.title;
-            document.getElementById('pv-rank').className = `text-xs font-black px-3 py-1 rounded-full ${rankData.class}`;
+            document.getElementById('pv-rank-badge').innerText = rankData.title;
+            document.getElementById('pv-rank-badge').className = `absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-black px-2 py-0.5 rounded-full whitespace-nowrap border border-white shadow ${rankData.class}`;
             document.getElementById('pv-eid').innerText = u.enrollmentId ? `ID: ${u.enrollmentId}` : '';
             document.getElementById('pv-followers').innerText = followersCount;
             document.getElementById('pv-following').innerText = followingCount;
@@ -2361,8 +2687,10 @@
                 }).join('');
             }
 
+            renderProfileCertSection(uid);
+
             updateProfileViewFollowBtn(uid);
-            ['view-dashboard', 'view-people', 'view-review', 'view-exam'].forEach(v => {
+            ['view-dashboard', 'view-people', 'view-review', 'view-exam', 'view-certificates'].forEach(v => {
                 document.getElementById(v)?.classList.add('hidden-view');
             });
             document.getElementById('view-profile').classList.remove('hidden-view');
@@ -2422,6 +2750,148 @@
         };
 
         // ========== END FOLLOWING SYSTEM ==========
+
+        // ========================
+        // CERTIFICATES
+        // ========================
+        window.renderMyCertificates = () => {
+            const grid = document.getElementById('my-cert-grid');
+            const empty = document.getElementById('my-cert-empty');
+            if (!grid || !currentUser) return;
+
+            const myCerts = (globalData.certificates || [])
+                .filter(c => c.studentId === currentUser.uid)
+                .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+            if (myCerts.length === 0) {
+                grid.innerHTML = '';
+                empty.classList.remove('hidden-view');
+                return;
+            }
+            empty.classList.add('hidden-view');
+
+            grid.innerHTML = myCerts.map(c => {
+                const id = c.certificateId || c.id;
+                const revoked = c.status === 'revoked';
+                const dateStr = c.issueDate ? new Date(c.issueDate).toLocaleDateString() : '—';
+                return `
+                <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden ${revoked ? 'opacity-60' : ''}">
+                    <div class="h-2 bg-gradient-to-r ${revoked ? 'from-slate-300 via-slate-400 to-slate-300' : 'from-amber-400 via-yellow-500 to-amber-400'}"></div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">🎓</div>
+                            ${revoked
+                                ? `<span class="px-2 py-1 bg-rose-100 text-rose-700 text-[10px] font-black rounded uppercase">Revoked</span>`
+                                : `<span class="px-2 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded uppercase">Active</span>`}
+                        </div>
+                        <h4 class="font-black text-lg text-slate-800 mb-1 leading-snug">${c.title}</h4>
+                        <p class="text-xs text-slate-400 font-bold mb-4">Issued ${dateStr}</p>
+                        <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 mb-4">
+                            <span class="font-mono font-black text-slate-700 text-sm tracking-wider truncate">${id}</span>
+                            <button onclick="window.copyCertId('${id}')" class="text-indigo-500 hover:text-indigo-700 text-xs font-bold shrink-0 ml-2">Copy</button>
+                        </div>
+                        <button onclick="window.viewCertFile('${id}')" class="w-full py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition-colors text-sm">View Certificate</button>
+                    </div>
+                </div>`;
+            }).join('');
+        };
+
+        // Compact "verified certificates" strip shown on a user's public profile (active certs only)
+        const renderProfileCertSection = (uid) => {
+            const section = document.getElementById('pv-certs-section');
+            const list = document.getElementById('pv-certs-list');
+            if (!section || !list) return;
+            const certs = (globalData.certificates || []).filter(c => c.studentId === uid && c.status !== 'revoked');
+            if (certs.length === 0) {
+                section.classList.add('hidden-view');
+                list.innerHTML = '';
+                return;
+            }
+            section.classList.remove('hidden-view');
+            list.innerHTML = certs.map(c => {
+                const id = c.certificateId || c.id;
+                return `
+                <div class="flex items-center justify-between gap-3 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5">
+                    <div class="min-w-0">
+                        <div class="font-bold text-slate-800 text-xs truncate">${c.title}</div>
+                        <div class="font-mono font-black text-amber-700 text-[11px] tracking-wider">${id}</div>
+                    </div>
+                    <button onclick="window.viewCertFile('${id}')" class="text-indigo-600 hover:text-indigo-800 text-xs font-bold shrink-0">View</button>
+                </div>`;
+            }).join('');
+        };
+
+        window.verifyCertificate = () => {
+            const input = document.getElementById('verify-cert-input');
+            const resultEl = document.getElementById('verify-cert-result');
+            const query = (input.value || '').trim().toUpperCase();
+            if (!query) {
+                resultEl.innerHTML = `<p class="text-sm text-slate-400 font-bold text-center py-2">Enter a Certificate ID above.</p>`;
+                return;
+            }
+            const cert = (globalData.certificates || []).find(c => (c.certificateId || c.id || '').toUpperCase() === query);
+            if (!cert) {
+                resultEl.innerHTML = `
+                <div class="flex items-center gap-3 p-4 bg-rose-50 border border-rose-200 rounded-2xl">
+                    <span class="text-2xl">❌</span>
+                    <div>
+                        <div class="font-black text-rose-700">Not Found</div>
+                        <div class="text-xs text-rose-500 font-bold">No certificate matches this ID. It may be invalid, mistyped, or fake — that's exactly what this check is for.</div>
+                    </div>
+                </div>`;
+                return;
+            }
+            const id = cert.certificateId || cert.id;
+            const revoked = cert.status === 'revoked';
+            const dateStr = cert.issueDate ? new Date(cert.issueDate).toLocaleDateString() : '—';
+            resultEl.innerHTML = `
+            <div class="p-4 ${revoked ? 'bg-rose-50 border-rose-200' : 'bg-emerald-50 border-emerald-200'} border rounded-2xl">
+                <div class="flex items-center gap-3 mb-3">
+                    <span class="text-2xl">${revoked ? '⚠️' : '✅'}</span>
+                    <div>
+                        <div class="font-black ${revoked ? 'text-rose-700' : 'text-emerald-700'}">${revoked ? 'Revoked Certificate' : 'Valid Certificate'}</div>
+                        <div class="text-xs ${revoked ? 'text-rose-500' : 'text-emerald-600'} font-bold">${revoked ? 'This certificate ID was revoked and is no longer valid.' : 'This certificate ID is genuine and on record.'}</div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 text-xs bg-white/60 rounded-xl p-3">
+                    <div><span class="text-slate-400 font-bold block">Issued To</span><span class="font-black text-slate-800">${cert.studentName || 'Unknown'}</span></div>
+                    <div><span class="text-slate-400 font-bold block">Enrollment ID</span><span class="font-black text-slate-800">${cert.enrollmentId || '—'}</span></div>
+                    <div class="col-span-2"><span class="text-slate-400 font-bold block">Title</span><span class="font-black text-slate-800">${cert.title}</span></div>
+                    <div><span class="text-slate-400 font-bold block">Issue Date</span><span class="font-black text-slate-800">${dateStr}</span></div>
+                </div>
+                <button onclick="window.viewCertFile('${id}')" class="mt-3 w-full py-2.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition-colors text-sm">View Certificate File</button>
+            </div>`;
+        };
+
+        window.viewCertFile = (certId) => {
+            const c = (globalData.certificates || []).find(x => (x.certificateId || x.id) === certId);
+            if (!c) return showToast("Certificate file not found.", "⚠️");
+            document.getElementById('cert-modal-title').innerText = `${c.title} — ${certId}`;
+            const body = document.getElementById('cert-modal-body');
+            if (c.fileType === 'pdf') {
+                body.innerHTML = `<iframe src="${c.fileData}" class="w-full h-[60vh] rounded-xl border border-slate-200 bg-white"></iframe>`;
+            } else {
+                body.innerHTML = `<img src="${c.fileData}" class="max-h-[60vh] w-full object-contain rounded-xl shadow-md bg-white">`;
+            }
+            const dl = document.getElementById('cert-modal-download');
+            dl.href = c.fileData;
+            dl.download = `${certId}${c.fileType === 'pdf' ? '.pdf' : '.jpg'}`;
+            document.getElementById('modal-cert-view').classList.remove('hidden-view');
+        };
+
+        window.closeCertViewModal = () => {
+            document.getElementById('modal-cert-view').classList.add('hidden-view');
+        };
+
+        window.copyCertId = async (id) => {
+            try {
+                await navigator.clipboard.writeText(id);
+                showToast(`Copied: ${id}`, "📋");
+            } catch (e) {
+                showToast(`ID: ${id}`, "🪪");
+            }
+        };
+        // ========== END CERTIFICATES ==========
 
         window.onload = init;
     </script>
