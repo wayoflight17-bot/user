@@ -117,6 +117,56 @@
         /* Copy pulse animation */
         @keyframes copyPulse { 0%{transform:scale(1)} 50%{transform:scale(1.15)} 100%{transform:scale(1)} }
         .copy-pulse { animation: copyPulse 0.3s ease; }
+
+        /* Follow button */
+        .follow-btn {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 5px 14px; border-radius: 20px; font-size: 11px; font-weight: 800;
+            letter-spacing: 0.04em; cursor: pointer; transition: all 0.2s; border: none;
+        }
+        .follow-btn.follow { background: #4f46e5; color: white; }
+        .follow-btn.follow:hover { background: #4338ca; transform: scale(1.04); }
+        .follow-btn.following { background: #f1f5f9; color: #64748b; border: 1.5px solid #e2e8f0; }
+        .follow-btn.following:hover { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
+
+        /* Social stat pills on hero */
+        .social-pill {
+            display: flex; flex-direction: column; align-items: center;
+            background: rgba(0,0,0,0.18); backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.15); border-radius: 16px;
+            padding: 10px 20px; cursor: pointer; transition: all 0.2s; min-width: 80px;
+        }
+        .social-pill:hover { background: rgba(0,0,0,0.3); transform: translateY(-2px); }
+
+        /* People card */
+        .people-card {
+            background: white; border: 1px solid #e2e8f0; border-radius: 24px;
+            padding: 20px; display: flex; flex-direction: column; align-items: center;
+            gap: 10px; text-align: center; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .people-card:hover { box-shadow: 0 8px 24px rgba(79,70,229,0.12); transform: translateY(-2px); border-color: #c7d2fe; }
+
+        /* Profile view page */
+        .profile-view-header {
+            background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 60%, #4f46e5 100%);
+            border-radius: 2.5rem; padding: 40px 32px 80px; position: relative; overflow: hidden;
+        }
+        .profile-view-header::after {
+            content: ''; position: absolute; right: -60px; bottom: -60px;
+            width: 260px; height: 260px; background: rgba(255,255,255,0.06); border-radius: 50%;
+        }
+
+        /* Nav tab pill */
+        .nav-tab {
+            display: flex; align-items: center; gap: 6px; padding: 8px 16px;
+            border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer;
+            transition: all 0.2s; color: #64748b; border: none; background: transparent;
+        }
+        .nav-tab.active { background: #eef2ff; color: #4f46e5; }
+        .nav-tab:hover:not(.active) { background: #f8fafc; color: #334155; }
+
+        /* Shimmer anim */
+        @keyframes shimmer { to { transform: translateX(200%); } }
     </style>
 </head>
 <body class="text-slate-900 pb-12">
@@ -133,10 +183,24 @@
             </div>
             
             <div id="nav-user" class="hidden-view flex items-center gap-3">
+                <!-- Nav Tab Pills -->
+                <div class="hidden md:flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                    <button onclick="window.switchView('view-dashboard')" id="nav-tab-dashboard" class="nav-tab active">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                        Home
+                    </button>
+                    <button onclick="window.switchView('view-people')" id="nav-tab-people" class="nav-tab">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        People
+                    </button>
+                </div>
                 <div class="hidden sm:flex items-center gap-2 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-xl cursor-pointer hover:bg-indigo-100 transition-colors" onclick="window.copyStudentId()" title="Click to copy your Student ID">
                     <svg class="w-3.5 h-3.5 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0"/></svg>
                     <span id="nav-enrollment-id" class="text-xs font-black text-indigo-700 font-mono tracking-wide">--</span>
                 </div>
+                <button onclick="window.switchView('view-people')" class="md:hidden w-9 h-9 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors" title="People">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </button>
                 <div class="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors" onclick="window.openProfile()">
                     <img id="nav-avatar" src="" class="w-8 h-8 rounded-full bg-white border border-slate-200 object-cover">
                     <div class="hidden md:flex flex-col">
@@ -295,6 +359,21 @@
                         <div class="flex justify-between items-center mt-2">
                             <div class="text-[10px] font-bold text-indigo-200 uppercase tracking-wider" id="dash-motivate-text">Climb the ranks!</div>
                             <div class="text-[10px] font-black bg-white/20 px-2 py-1 rounded text-white" id="dash-next-level">-- to next</div>
+                        </div>
+                        <!-- Social Stats -->
+                        <div class="flex gap-3 mt-4 pt-4 border-t border-white/15">
+                            <div class="social-pill flex-1" onclick="window.openFollowersModal('followers')">
+                                <span class="text-xl font-black" id="dash-followers-count">0</span>
+                                <span class="text-[9px] font-black uppercase tracking-widest text-indigo-200 mt-0.5">Followers</span>
+                            </div>
+                            <div class="social-pill flex-1" onclick="window.openFollowersModal('following')">
+                                <span class="text-xl font-black" id="dash-following-count">0</span>
+                                <span class="text-[9px] font-black uppercase tracking-widest text-indigo-200 mt-0.5">Following</span>
+                            </div>
+                            <div class="social-pill flex-1" onclick="window.switchView('view-people')">
+                                <svg class="w-5 h-5 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                <span class="text-[9px] font-black uppercase tracking-widest text-indigo-200 mt-0.5">Follow</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -478,6 +557,110 @@
         </div>
 
     </main>
+
+    <!-- PEOPLE VIEW -->
+    <div id="view-people" class="hidden-view fade-in max-w-5xl mx-auto px-4 py-8 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h2 class="text-2xl font-black text-slate-900">Discover People</h2>
+                <p class="text-slate-500 text-sm font-medium mt-1">Follow classmates and track their progress</p>
+            </div>
+            <div class="flex gap-2">
+                <div class="flex bg-slate-100 rounded-xl p-1 gap-1">
+                    <button onclick="window.setPeopleTab('all')" id="people-tab-all" class="px-4 py-2 rounded-lg text-sm font-bold bg-white shadow text-slate-800 transition-all">All Students</button>
+                    <button onclick="window.setPeopleTab('following')" id="people-tab-following" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-800 transition-all">Following</button>
+                    <button onclick="window.setPeopleTab('followers')" id="people-tab-followers" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-800 transition-all">Followers</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="relative">
+            <input type="text" id="people-search" oninput="window.filterPeople()" placeholder="Search by name or ID..." class="w-full px-5 py-3.5 pl-11 rounded-2xl bg-white border border-slate-200 focus:border-indigo-400 outline-none font-bold text-slate-700 shadow-sm transition-all">
+            <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+        </div>
+
+        <div id="people-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <!-- Injected via JS -->
+        </div>
+        <div id="people-empty" class="hidden-view text-center py-16 text-slate-400">
+            <div class="text-5xl mb-3">👥</div>
+            <p class="font-bold">No students found</p>
+        </div>
+    </div>
+
+    <!-- PROFILE VIEW (viewing another user) -->
+    <div id="view-profile" class="hidden-view fade-in max-w-3xl mx-auto px-4 py-8 space-y-6">
+        <button onclick="window.goBackFromProfile()" class="px-4 py-2 bg-white border border-slate-200 text-sm font-bold text-slate-600 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm">
+            ← Back
+        </button>
+        <div class="profile-view-header text-white">
+            <div class="relative z-10 flex flex-col sm:flex-row items-center sm:items-end gap-6">
+                <img id="pv-avatar" src="" class="w-28 h-28 rounded-full border-4 border-white/30 shadow-xl object-cover bg-white/10">
+                <div class="text-center sm:text-left flex-1">
+                    <h2 class="text-3xl font-black mb-1" id="pv-name">Name</h2>
+                    <div class="flex flex-wrap justify-center sm:justify-start gap-2 mb-3">
+                        <span class="text-xs font-black bg-white/20 px-3 py-1 rounded-full" id="pv-rank">Novice</span>
+                        <span class="text-xs font-mono font-black bg-white/20 px-3 py-1 rounded-full" id="pv-eid"></span>
+                    </div>
+                    <button id="pv-follow-btn" onclick="window.toggleFollowProfile()" class="follow-btn follow text-sm px-5 py-2">Follow</button>
+                </div>
+                <div class="flex gap-4">
+                    <div class="social-pill" onclick="">
+                        <span class="text-2xl font-black" id="pv-followers">0</span>
+                        <span class="text-[9px] font-black uppercase tracking-widest text-indigo-200">Followers</span>
+                    </div>
+                    <div class="social-pill">
+                        <span class="text-2xl font-black" id="pv-following">0</span>
+                        <span class="text-[9px] font-black uppercase tracking-widest text-indigo-200">Following</span>
+                    </div>
+                    <div class="social-pill">
+                        <span class="text-2xl font-black" id="pv-xp">0</span>
+                        <span class="text-[9px] font-black uppercase tracking-widest text-indigo-200">XP</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Profile Stats -->
+        <div class="grid grid-cols-3 gap-4">
+            <div class="stat-chip">
+                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Tests Taken</div>
+                <div class="text-2xl font-black text-indigo-600" id="pv-tests">0</div>
+            </div>
+            <div class="stat-chip">
+                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Best Score</div>
+                <div class="text-2xl font-black text-emerald-600" id="pv-best">0 XP</div>
+            </div>
+            <div class="stat-chip">
+                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Global Rank</div>
+                <div class="text-2xl font-black text-amber-600" id="pv-global-rank">#--</div>
+            </div>
+        </div>
+        <!-- Recent Activity -->
+        <div class="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
+                <span class="w-2.5 h-2.5 bg-indigo-500 rounded-full"></span>
+                <h3 class="font-black text-slate-800">Recent Activity</h3>
+            </div>
+            <div id="pv-activity" class="p-4 space-y-3">
+                <!-- injected -->
+            </div>
+        </div>
+    </div>
+
+    <!-- FOLLOWERS / FOLLOWING MODAL -->
+    <div id="modal-social" class="hidden-view fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto" onclick="if(event.target===this) window.closeSocialModal()">
+        <div class="w-full max-w-sm bg-white rounded-[2.5rem] overflow-hidden shadow-2xl my-8">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="text-lg font-black text-slate-800" id="social-modal-title">Followers</h3>
+                <button onclick="window.closeSocialModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-rose-100 hover:text-rose-600 transition-colors font-bold">✕</button>
+            </div>
+            <div id="social-modal-list" class="max-h-96 overflow-y-auto p-4 space-y-3">
+                <!-- injected -->
+            </div>
+        </div>
+    </div>
+
+    <main class="hidden"><!-- placeholder to keep original closing --></main>
 
     <!-- Modals -->
     <div id="modal-overlay" class="hidden-view fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
@@ -866,7 +1049,7 @@
         // ------------------------------------
 
         window.switchView = (id) => {
-            ['view-auth', 'view-onboarding', 'view-dashboard', 'view-exam', 'view-review'].forEach(v => {
+            ['view-auth', 'view-onboarding', 'view-dashboard', 'view-exam', 'view-review', 'view-people', 'view-profile'].forEach(v => {
                 const el = document.getElementById(v);
                 if(el) el.classList.add('hidden-view');
             });
@@ -875,6 +1058,14 @@
                 target.classList.remove('hidden-view');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
+
+            // Update nav tabs
+            ['dashboard', 'people'].forEach(tab => {
+                const navTab = document.getElementById(`nav-tab-${tab}`);
+                if (navTab) {
+                    navTab.className = id === `view-${tab}` ? 'nav-tab active' : 'nav-tab';
+                }
+            });
             
             const ctrl = document.getElementById('nav-user');
             if (currentUser && userData && id !== 'view-onboarding') {
@@ -883,6 +1074,11 @@
                 setImgSrc('nav-avatar', userData.avatar || AVATARS[0]);
             } else {
                 ctrl.classList.add('hidden-view');
+            }
+
+            // Render people when switching to people view
+            if (id === 'view-people') {
+                window.renderPeople();
             }
         };
 
@@ -1202,6 +1398,8 @@
             unsubscribes.forEach(u => u());
             unsubscribes = [];
 
+            setupSocialListeners();
+
             unsubscribes.push(onSnapshot(getPublicDoc('exam_users', currentUser.uid), docSnap => {
                 if(docSnap.exists()) {
                     userData = docSnap.data();
@@ -1327,17 +1525,23 @@
 
                         const lbUserDoc = globalData.users[u.id] || {};
                         const lbEid = lbUserDoc.enrollmentId || '';
+                        const isFollowingLb = myFollowing.has(u.id);
                         return `
                         <div class="flex items-center justify-between p-3 rounded-2xl border transition-all ${style}">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 text-center text-lg">${rankDisplay}</div>
-                                <img src="${u.avatar}" class="w-10 h-10 rounded-full border-2 border-white shadow-sm bg-white object-cover">
+                            <div class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onclick="window.openProfileView('${u.id}', 'leaderboard')">
+                                <div class="w-8 text-center text-lg shrink-0">${rankDisplay}</div>
+                                <img src="${u.avatar}" class="w-10 h-10 rounded-full border-2 border-white shadow-sm bg-white object-cover shrink-0">
                                 <div class="flex flex-col min-w-0">
-                                    <span class="text-sm truncate max-w-[100px] font-bold ${isMe ? 'text-indigo-600' : ''}">${isMe ? 'You' : u.name}</span>
+                                    <span class="text-sm truncate max-w-[80px] font-bold ${isMe ? 'text-indigo-600' : ''}">${isMe ? 'You' : u.name}</span>
                                     ${lbEid ? `<span class="text-[9px] font-mono text-slate-400 font-bold">${lbEid}</span>` : ''}
                                 </div>
                             </div>
-                            <div class="text-sm tracking-tight font-bold">${u.xp} xp</div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <div class="text-sm tracking-tight font-bold">${u.xp} xp</div>
+                                ${!isMe ? `<button onclick="window.toggleFollow('${u.id}')" data-follow-uid="${u.id}" class="follow-btn ${isFollowingLb ? 'following' : 'follow'} text-[9px] px-2 py-1">
+                                    ${isFollowingLb ? '✓' : '+'}
+                                </button>` : ''}
+                            </div>
                         </div>`;
                     }).join('');
                 }
@@ -1935,6 +2139,289 @@
 
             window.switchView('view-review');
         };
+
+        // ========== FOLLOWING / FOLLOWERS SYSTEM ==========
+
+        // Firestore paths:
+        //   follows/{followerId}/following/{followedId}  → { followedId, followedAt }
+        //   follows/{followedId}/followers/{followerId}  → { followerId, followedAt }
+        const getFollowCol = (uid, type) => collection(db, 'artifacts', appId, 'public', 'data', 'follows', uid, type);
+        const getFollowDoc = (uid, type, targetId) => doc(db, 'artifacts', appId, 'public', 'data', 'follows', uid, type, targetId);
+
+        let myFollowing = new Set(); // UIDs I follow
+        let myFollowers = new Set(); // UIDs that follow me
+        let socialUnsubscribes = [];
+        let currentPeopleTab = 'all';
+        let viewingProfileUid = null;
+        let profileViewSource = 'people'; // 'people' or 'leaderboard'
+
+        const setupSocialListeners = () => {
+            socialUnsubscribes.forEach(u => u());
+            socialUnsubscribes = [];
+
+            // My following
+            socialUnsubscribes.push(onSnapshot(getFollowCol(currentUser.uid, 'following'), snap => {
+                myFollowing = new Set(snap.docs.map(d => d.id));
+                updateFollowerCounts();
+                if (document.getElementById('view-people') && !document.getElementById('view-people').classList.contains('hidden-view')) {
+                    window.renderPeople();
+                }
+            }));
+
+            // My followers
+            socialUnsubscribes.push(onSnapshot(getFollowCol(currentUser.uid, 'followers'), snap => {
+                myFollowers = new Set(snap.docs.map(d => d.id));
+                updateFollowerCounts();
+            }));
+        };
+
+        const updateFollowerCounts = () => {
+            const fc = document.getElementById('dash-followers-count');
+            const fgc = document.getElementById('dash-following-count');
+            if (fc) fc.innerText = myFollowers.size;
+            if (fgc) fgc.innerText = myFollowing.size;
+        };
+
+        window.toggleFollow = async (targetUid) => {
+            if (!currentUser || targetUid === currentUser.uid) return;
+            const btn = document.querySelector(`[data-follow-uid="${targetUid}"]`);
+            const isFollowing = myFollowing.has(targetUid);
+
+            try {
+                if (isFollowing) {
+                    // Unfollow
+                    await Promise.all([
+                        setDoc(getFollowDoc(currentUser.uid, 'following', targetUid), { deleted: true }),
+                        setDoc(getFollowDoc(targetUid, 'followers', currentUser.uid), { deleted: true })
+                    ]);
+                    // Actually delete
+                    const { deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                    await Promise.all([
+                        deleteDoc(getFollowDoc(currentUser.uid, 'following', targetUid)),
+                        deleteDoc(getFollowDoc(targetUid, 'followers', currentUser.uid))
+                    ]);
+                    showToast("Unfollowed", "👋");
+                } else {
+                    // Follow
+                    const now = Date.now();
+                    await Promise.all([
+                        setDoc(getFollowDoc(currentUser.uid, 'following', targetUid), { followedAt: now }),
+                        setDoc(getFollowDoc(targetUid, 'followers', currentUser.uid), { followedAt: now })
+                    ]);
+                    showToast("Following! 🎉", "✅");
+                }
+            } catch(e) {
+                console.error("Follow error:", e);
+                showToast("Action failed. Check connection.", "❌");
+            }
+        };
+
+        window.toggleFollowProfile = async () => {
+            if (!viewingProfileUid) return;
+            await window.toggleFollow(viewingProfileUid);
+            updateProfileViewFollowBtn(viewingProfileUid);
+        };
+
+        const updateProfileViewFollowBtn = (uid) => {
+            const btn = document.getElementById('pv-follow-btn');
+            if (!btn) return;
+            if (uid === currentUser.uid) { btn.style.display = 'none'; return; }
+            const isFollowing = myFollowing.has(uid);
+            btn.className = `follow-btn ${isFollowing ? 'following' : 'follow'} text-sm px-5 py-2`;
+            btn.innerText = isFollowing ? 'Following' : 'Follow';
+        };
+
+        // --- People View ---
+        window.setPeopleTab = (tab) => {
+            currentPeopleTab = tab;
+            ['all', 'following', 'followers'].forEach(t => {
+                const btn = document.getElementById(`people-tab-${t}`);
+                if (!btn) return;
+                if (t === tab) {
+                    btn.className = "px-4 py-2 rounded-lg text-sm font-bold bg-white shadow text-slate-800 transition-all";
+                } else {
+                    btn.className = "px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-800 transition-all";
+                }
+            });
+            window.renderPeople();
+        };
+
+        window.filterPeople = () => window.renderPeople();
+
+        window.renderPeople = () => {
+            const search = (document.getElementById('people-search')?.value || '').toLowerCase().trim();
+            const allUsers = Object.values(globalData.users).filter(u => u.uid !== currentUser.uid);
+
+            let filtered = allUsers;
+            if (currentPeopleTab === 'following') {
+                filtered = allUsers.filter(u => myFollowing.has(u.uid));
+            } else if (currentPeopleTab === 'followers') {
+                filtered = allUsers.filter(u => myFollowers.has(u.uid));
+            }
+
+            if (search) {
+                filtered = filtered.filter(u =>
+                    u.name?.toLowerCase().includes(search) ||
+                    u.enrollmentId?.toLowerCase().includes(search)
+                );
+            }
+
+            const grid = document.getElementById('people-grid');
+            const empty = document.getElementById('people-empty');
+            if (!grid) return;
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                empty?.classList.remove('hidden-view');
+                return;
+            }
+            empty?.classList.add('hidden-view');
+
+            const lb = getLeaderboard(false);
+
+            grid.innerHTML = filtered.map(u => {
+                const isFollowing = myFollowing.has(u.uid);
+                const userXp = globalData.results.filter(r => r.studentId === u.uid).reduce((s, r) => s + r.score, 0);
+                const rankData = getRankData(userXp);
+                const lbRank = lb.findIndex(l => l.id === u.uid);
+                const rankDisplay = lbRank >= 0 ? `#${lbRank + 1}` : '--';
+                return `
+                <div class="people-card" onclick="window.openProfileView('${u.uid}', 'people')">
+                    <div class="relative">
+                        <img src="${u.avatar || AVATARS[0]}" class="w-20 h-20 rounded-full border-4 border-slate-100 shadow-md object-cover bg-slate-50">
+                        <div class="absolute -bottom-1 -right-1 text-sm bg-white rounded-full border border-slate-100 shadow px-1.5 py-0.5 font-black text-slate-600">${rankDisplay}</div>
+                    </div>
+                    <div class="w-full">
+                        <p class="font-black text-slate-800 text-sm truncate">${u.name}</p>
+                        <p class="text-[10px] font-mono text-slate-400 font-bold mb-2">${u.enrollmentId || ''}</p>
+                        <div class="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${rankData.class} mb-3">${rankData.title}</div>
+                        <div class="text-xs font-bold text-slate-500 mb-3">${userXp} XP</div>
+                    </div>
+                    <button onclick="event.stopPropagation(); window.toggleFollow('${u.uid}')" data-follow-uid="${u.uid}" class="follow-btn ${isFollowing ? 'following' : 'follow'} w-full justify-center">
+                        ${isFollowing ? 'Following' : '+ Follow'}
+                    </button>
+                </div>`;
+            }).join('');
+        };
+
+        // --- Profile View ---
+        window.openProfileView = async (uid, source = 'people') => {
+            viewingProfileUid = uid;
+            profileViewSource = source;
+            const u = globalData.users[uid];
+            if (!u) return;
+
+            const allResults = globalData.results.filter(r => r.studentId === uid);
+            const totalXp = allResults.reduce((s, r) => s + r.score, 0);
+            const rankData = getRankData(totalXp);
+            const lb = getLeaderboard(false);
+            const lbRank = lb.findIndex(l => l.id === uid);
+
+            // Get follow counts from Firestore
+            let followersCount = 0, followingCount = 0;
+            try {
+                const [fSnap, fgSnap] = await Promise.all([
+                    getDocs(getFollowCol(uid, 'followers')),
+                    getDocs(getFollowCol(uid, 'following'))
+                ]);
+                followersCount = fSnap.size;
+                followingCount = fgSnap.size;
+            } catch(e) {}
+
+            document.getElementById('pv-avatar').src = u.avatar || AVATARS[0];
+            document.getElementById('pv-name').innerText = u.name;
+            document.getElementById('pv-rank').innerText = rankData.title;
+            document.getElementById('pv-rank').className = `text-xs font-black px-3 py-1 rounded-full ${rankData.class}`;
+            document.getElementById('pv-eid').innerText = u.enrollmentId ? `ID: ${u.enrollmentId}` : '';
+            document.getElementById('pv-followers').innerText = followersCount;
+            document.getElementById('pv-following').innerText = followingCount;
+            document.getElementById('pv-xp').innerText = totalXp;
+            document.getElementById('pv-tests').innerText = allResults.length;
+            const bestScore = allResults.length ? Math.max(...allResults.map(r => r.score)) : 0;
+            document.getElementById('pv-best').innerText = `${bestScore} XP`;
+            document.getElementById('pv-global-rank').innerText = lbRank >= 0 ? `#${lbRank + 1}` : '#--';
+
+            // Recent Activity
+            const recent = [...allResults].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).slice(0, 5);
+            const pvActivity = document.getElementById('pv-activity');
+            if (recent.length === 0) {
+                pvActivity.innerHTML = '<p class="text-center text-slate-400 font-bold py-4">No activity yet</p>';
+            } else {
+                pvActivity.innerHTML = recent.map(r => {
+                    const quiz = MASTER_QUIZZES.find(q => q.id === r.testId);
+                    const date = r.timestamp ? new Date(r.timestamp).toLocaleDateString() : '';
+                    return `
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div>
+                            <p class="font-bold text-slate-800 text-sm">${quiz?.title || 'Assessment'}</p>
+                            <p class="text-[10px] text-slate-400 font-bold mt-0.5">${date}</p>
+                        </div>
+                        <span class="px-3 py-1.5 bg-emerald-100 text-emerald-800 font-black rounded-xl text-sm">${r.score} XP</span>
+                    </div>`;
+                }).join('');
+            }
+
+            updateProfileViewFollowBtn(uid);
+            ['view-dashboard', 'view-people', 'view-review', 'view-exam'].forEach(v => {
+                document.getElementById(v)?.classList.add('hidden-view');
+            });
+            document.getElementById('view-profile').classList.remove('hidden-view');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.goBackFromProfile = () => {
+            document.getElementById('view-profile').classList.add('hidden-view');
+            if (profileViewSource === 'people') {
+                window.switchView('view-people');
+            } else {
+                window.switchView('view-dashboard');
+            }
+        };
+
+        // --- Followers/Following Modal ---
+        window.openFollowersModal = async (type) => {
+            const title = type === 'followers' ? 'Followers' : 'Following';
+            document.getElementById('social-modal-title').innerText = title;
+            document.getElementById('social-modal-list').innerHTML = '<div class="text-center py-8 text-slate-400 font-bold">Loading...</div>';
+            document.getElementById('modal-social').classList.remove('hidden-view');
+
+            try {
+                const snap = await getDocs(getFollowCol(currentUser.uid, type));
+                const uids = snap.docs.map(d => d.id);
+                const users = uids.map(uid => globalData.users[uid]).filter(Boolean);
+
+                if (users.length === 0) {
+                    document.getElementById('social-modal-list').innerHTML = `<p class="text-center text-slate-400 font-bold py-6">No ${title.toLowerCase()} yet</p>`;
+                    return;
+                }
+
+                document.getElementById('social-modal-list').innerHTML = users.map(u => {
+                    const isFollowing = myFollowing.has(u.uid);
+                    const isMe = u.uid === currentUser.uid;
+                    return `
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100 cursor-pointer hover:bg-indigo-50 hover:border-indigo-100 transition-colors" onclick="window.closeSocialModal(); window.openProfileView('${u.uid}', 'dashboard')">
+                        <div class="flex items-center gap-3">
+                            <img src="${u.avatar || AVATARS[0]}" class="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover">
+                            <div>
+                                <p class="font-bold text-slate-800 text-sm">${u.name}</p>
+                                <p class="text-[10px] font-mono text-slate-400">${u.enrollmentId || ''}</p>
+                            </div>
+                        </div>
+                        ${!isMe ? `<button onclick="event.stopPropagation(); window.toggleFollow('${u.uid}')" data-follow-uid="${u.uid}" class="follow-btn ${isFollowing ? 'following' : 'follow'}">
+                            ${isFollowing ? 'Following' : '+ Follow'}
+                        </button>` : ''}
+                    </div>`;
+                }).join('');
+            } catch(e) {
+                document.getElementById('social-modal-list').innerHTML = '<p class="text-center text-rose-400 font-bold py-6">Failed to load</p>';
+            }
+        };
+
+        window.closeSocialModal = () => {
+            document.getElementById('modal-social').classList.add('hidden-view');
+        };
+
+        // ========== END FOLLOWING SYSTEM ==========
 
         window.onload = init;
     </script>
