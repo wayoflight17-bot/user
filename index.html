@@ -295,6 +295,15 @@
                             <input type="date" id="onboard-dob" class="w-full px-4 py-3.5 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none transition-colors font-bold text-slate-700">
                         </div>
                     </div>
+
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Username <span class="normal-case font-medium">(unique, like @yourname — used to search you)</span></label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black">@</span>
+                            <input type="text" id="onboard-username" oninput="window.checkUsernameAvailability('onboard-username', 'onboard-username-status')" class="w-full pl-9 pr-4 py-3.5 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none transition-colors font-bold text-slate-700" placeholder="yourname" autocomplete="off" spellcheck="false">
+                        </div>
+                        <div id="onboard-username-status" class="text-xs font-bold mt-1.5 ml-1 hidden"></div>
+                    </div>
                     
                     <div>
                         <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Phone Number</label>
@@ -605,7 +614,7 @@
         </div>
 
         <div class="relative">
-            <input type="text" id="people-search" oninput="window.filterPeople()" placeholder="Search by name or ID..." class="w-full px-5 py-3.5 pl-11 rounded-2xl bg-white border border-slate-200 focus:border-indigo-400 outline-none font-bold text-slate-700 shadow-sm transition-all">
+            <input type="text" id="people-search" oninput="window.filterPeople()" placeholder="Search by name, @username, or ID..." class="w-full px-5 py-3.5 pl-11 rounded-2xl bg-white border border-slate-200 focus:border-indigo-400 outline-none font-bold text-slate-700 shadow-sm transition-all">
             <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
         </div>
 
@@ -701,6 +710,7 @@
         <!-- Bio section -->
         <div class="px-1 mb-5">
             <div class="font-black text-slate-900 text-sm" id="pv-name">Name</div>
+            <div class="text-xs font-bold text-indigo-500" id="pv-username"></div>
             <div class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mt-0.5" id="pv-eid"></div>
             <div class="text-sm text-slate-600 mt-2 leading-relaxed whitespace-pre-line" id="pv-bio"></div>
             <!-- XP + Rank inline -->
@@ -826,6 +836,14 @@
                             <input id="profile-name" type="text" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none transition-colors font-bold text-slate-700">
                         </div>
                         <div>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Username <span class="normal-case font-medium">(unique @handle, used to search you)</span></label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black">@</span>
+                                <input id="profile-username" type="text" autocomplete="off" spellcheck="false" oninput="window.checkUsernameAvailability('profile-username', 'profile-username-status', currentUser?.uid)" class="w-full pl-9 pr-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none transition-colors font-bold text-slate-700">
+                            </div>
+                            <div id="profile-username-status" class="text-xs font-bold mt-1.5 ml-1 hidden"></div>
+                        </div>
+                        <div>
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Bio <span class="normal-case font-medium">(optional)</span></label>
                             <textarea id="profile-bio" rows="3" placeholder="Tell others about yourself…" class="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none transition-colors font-medium text-slate-700 resize-none text-sm"></textarea>
                         </div>
@@ -873,11 +891,12 @@
                     ⚑ Cheating Attempted — Flagged for Review
                 </div>
 
-                <div class="w-24 h-24 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-white/30 relative z-10 shadow-2xl mt-4">
-                    <img id="achieve-avatar" src="" class="w-full h-full rounded-full object-cover">
+                <div class="w-24 h-24 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-white/30 relative z-10 shadow-2xl mt-4 overflow-hidden">
+                    <img id="achieve-avatar" src="" class="w-full h-full object-contain">
                 </div>
                 
                 <h4 class="text-3xl font-black mb-1 drop-shadow-lg" id="achieve-name">Name</h4>
+                <p class="text-indigo-300 font-bold text-sm mb-2" id="achieve-username"></p>
                 <div class="flex items-center justify-center gap-2 mb-2 flex-wrap">
                     <p class="text-indigo-200 font-bold text-xs uppercase tracking-widest bg-black/20 inline-block px-3 py-1 rounded-full" id="achieve-test-name">Test Name</p>
                     <span class="text-[10px] font-black bg-white/20 border border-white/30 px-3 py-1 rounded-full text-white font-mono uppercase tracking-wider" id="achieve-student-id">ID: --</span>
@@ -940,14 +959,15 @@
     <div id="capture-share-card" class="fixed top-0 left-[-9999px] w-[600px] share-card-wrapper p-10 text-white rounded-3xl overflow-hidden shadow-2xl z-0" style="font-family: 'Plus Jakarta Sans', sans-serif;">
         <div class="relative z-10">
             <div class="flex items-center gap-4 mb-8 pb-6 border-b border-white/20">
-                <img id="capture-logo" src="" class="w-14 h-14 rounded-xl bg-white object-cover">
+                <img id="capture-logo" src="" class="w-14 h-14 rounded-xl bg-black object-contain p-0.5">
                 <h2 id="capture-webname" class="text-3xl font-black tracking-tight drop-shadow-md">Way of Light</h2>
             </div>
             
             <div class="flex items-center gap-6 mb-10 bg-black/20 p-8 rounded-3xl backdrop-blur-md border border-white/20 shadow-inner">
-                <img id="capture-avatar" src="" class="w-28 h-28 rounded-full border-4 border-indigo-400 bg-white shadow-xl object-cover">
+                <img id="capture-avatar" src="" class="w-28 h-28 rounded-full border-4 border-indigo-400 bg-white shadow-xl object-contain">
                 <div>
                     <h3 id="capture-name" class="text-4xl font-black mb-1 drop-shadow-md">Name</h3>
+                    <p id="capture-username" class="text-base font-bold text-indigo-300 mb-1"></p>
                     <p id="capture-student-id" class="text-sm font-black text-indigo-300 font-mono mb-2 tracking-wider">ID: --</p>
                     <p id="capture-title" class="text-2xl font-bold text-amber-400 bg-black/30 inline-block px-4 py-1.5 rounded-full uppercase tracking-widest shadow-inner">Rank</p>
                 </div>
@@ -1411,6 +1431,8 @@
             document.getElementById('capture-webname').innerText = globalData.config.webName || 'Knowledge Portal';
             document.getElementById('capture-avatar').src = finalAvatarSrc;
             document.getElementById('capture-name').innerText = userData.name;
+            const capUsername = document.getElementById('capture-username');
+            if(capUsername) capUsername.innerText = userData.username ? `@${userData.username}` : '';
             const capEid = document.getElementById('capture-student-id');
             if(capEid) capEid.innerText = userData.enrollmentId ? `ID: ${userData.enrollmentId}` : '';
             
@@ -1556,6 +1578,51 @@
             window.renderOnboardAvatars();
         };
 
+        // ---- Unique Username helpers ----
+        const normalizeUsername = (raw) => (raw || '').toLowerCase().trim().replace(/[^a-z0-9_.]/g, '');
+
+        const isUsernameTaken = async (uname, excludeUid = null) => {
+            try {
+                const snap = await getDocs(query(getPublicCol('exam_users'), where('username', '==', uname)));
+                return snap.docs.some(d => d.id !== excludeUid);
+            } catch (e) {
+                // Fallback: check already-loaded cache if query fails (e.g. missing index)
+                return Object.entries(globalData.users || {}).some(([uid, u]) => u.username === uname && uid !== excludeUid);
+            }
+        };
+
+        let usernameCheckTimer = null;
+        window.checkUsernameAvailability = (inputId, statusId, excludeUid = null) => {
+            const inputEl = document.getElementById(inputId);
+            const statusEl = document.getElementById(statusId);
+            const clean = normalizeUsername(inputEl.value);
+            inputEl.value = clean;
+            clearTimeout(usernameCheckTimer);
+
+            if (!clean) {
+                statusEl.classList.add('hidden');
+                return;
+            }
+            if (clean.length < 3) {
+                statusEl.textContent = 'Username must be at least 3 characters.';
+                statusEl.className = 'text-xs font-bold mt-1.5 ml-1 text-rose-500';
+                return;
+            }
+            statusEl.textContent = 'Checking availability…';
+            statusEl.className = 'text-xs font-bold mt-1.5 ml-1 text-slate-400';
+
+            usernameCheckTimer = setTimeout(async () => {
+                const taken = await isUsernameTaken(clean, excludeUid);
+                if (taken) {
+                    statusEl.textContent = `@${clean} is already taken.`;
+                    statusEl.className = 'text-xs font-bold mt-1.5 ml-1 text-rose-500';
+                } else {
+                    statusEl.textContent = `@${clean} is available!`;
+                    statusEl.className = 'text-xs font-bold mt-1.5 ml-1 text-emerald-500';
+                }
+            }, 400);
+        };
+
         window.submitOnboarding = async () => {
             if(!pendingGoogleUser) return;
             
@@ -1563,8 +1630,11 @@
             const dob = document.getElementById('onboard-dob').value.trim();
             const phone = document.getElementById('onboard-phone').value.trim();
             const pwd = document.getElementById('onboard-password').value;
-            
+            const username = normalizeUsername(document.getElementById('onboard-username').value);
+
             if(!name || !dob || !phone) return showError("Please provide your name, DOB, and phone number.", 'onboard-error');
+            if(!username || username.length < 3) return showError("Please choose a username of at least 3 characters.", 'onboard-error');
+            if(await isUsernameTaken(username)) return showError(`Username @${username} is already taken. Please choose another.`, 'onboard-error');
             
             if(authMethod === 'google' && pwd) {
                 if(pwd.length < 6) return showError("Password must be at least 6 characters long.", 'onboard-error');
@@ -1591,6 +1661,7 @@
             const newUser = {
                 uid: pendingGoogleUser.uid,
                 enrollmentId: enrollmentId,
+                username: username,
                 name: name,
                 dob: dob,
                 phone: phone,
@@ -1979,6 +2050,12 @@
             if(!userData) return;
             tempAvatar = userData.avatar;
             document.getElementById('profile-name').value = userData.name;
+            const profUsername = document.getElementById('profile-username');
+            if (profUsername) {
+                profUsername.value = userData.username || '';
+                const profUsernameStatus = document.getElementById('profile-username-status');
+                if (profUsernameStatus) profUsernameStatus.classList.add('hidden');
+            }
             document.getElementById('profile-email').value = userData.email || '';
             const bioEl = document.getElementById('profile-bio');
             if (bioEl) bioEl.value = userData.bio || '';
@@ -2018,9 +2095,20 @@
             const newName = document.getElementById('profile-name').value.trim();
             if(!newName) return showError("Name is required.", 'auth-error'); 
             const newBio = (document.getElementById('profile-bio')?.value || '').trim();
+            const usernameInput = document.getElementById('profile-username');
+            const newUsername = usernameInput ? normalizeUsername(usernameInput.value) : userData.username;
+
+            if (usernameInput) {
+                if (!newUsername || newUsername.length < 3) return showError("Username must be at least 3 characters.", 'auth-error');
+                if (newUsername !== userData.username && await isUsernameTaken(newUsername, currentUser.uid)) {
+                    return showError(`Username @${newUsername} is already taken.`, 'auth-error');
+                }
+            }
+
             try {
                 await updateDoc(getPublicDoc('exam_users', currentUser.uid), {
                     name: newName,
+                    username: newUsername,
                     avatar: tempAvatar,
                     bio: newBio
                 });
@@ -2376,6 +2464,8 @@
             // Enrollment ID on popup
             const achEid = document.getElementById('achieve-student-id');
             if(achEid) achEid.innerText = userData.enrollmentId ? `ID: ${userData.enrollmentId}` : '';
+            const achUsername = document.getElementById('achieve-username');
+            if(achUsername) achUsername.innerText = userData.username ? `@${userData.username}` : '';
 
             // Grade badge
             const gradeEl = document.getElementById('achieve-grade');
@@ -2588,6 +2678,7 @@
             if (search) {
                 filtered = filtered.filter(u =>
                     u.name?.toLowerCase().includes(search) ||
+                    u.username?.toLowerCase().includes(search) ||
                     u.enrollmentId?.toLowerCase().includes(search)
                 );
             }
@@ -2619,6 +2710,7 @@
                     </div>
                     <div class="w-full">
                         <p class="font-black text-slate-800 text-sm truncate">${u.name}</p>
+                        ${u.username ? `<p class="text-[10px] font-bold text-indigo-400 truncate">@${u.username}</p>` : ''}
                         <p class="text-[10px] font-mono text-slate-400 font-bold mb-2">${u.enrollmentId || ''}</p>
                         <div class="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${rankData.class} mb-3">${rankData.title}</div>
                         <div class="text-xs font-bold text-slate-500 mb-3">${userXp} XP</div>
@@ -2656,6 +2748,8 @@
 
             document.getElementById('pv-avatar').src = u.avatar || AVATARS[0];
             document.getElementById('pv-name').innerText = u.name;
+            const pvUsernameEl = document.getElementById('pv-username');
+            if (pvUsernameEl) pvUsernameEl.innerText = u.username ? `@${u.username}` : '';
             document.getElementById('pv-rank-badge').innerText = rankData.title;
             document.getElementById('pv-rank-badge').className = `absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-black px-2 py-0.5 rounded-full whitespace-nowrap border border-white shadow ${rankData.class}`;
             document.getElementById('pv-eid').innerText = u.enrollmentId ? `ID: ${u.enrollmentId}` : '';
