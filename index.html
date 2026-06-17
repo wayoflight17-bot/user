@@ -6,6 +6,7 @@
     <title id="doc-title">Way of Light - Knowledge Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script async defer src="https://www.instagram.com/embed.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
         
@@ -64,6 +65,38 @@
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        /* ===== STUDY CONTENT STYLES ===== */
+        .study-card { background: #fff; border-radius: 24px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); transition: box-shadow 0.2s; }
+        .study-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.10); }
+
+        /* Instagram carousel */
+        .insta-carousel-track { display: flex; transition: transform 0.35s cubic-bezier(.4,0,.2,1); will-change: transform; }
+        .insta-carousel-slide { flex: 0 0 100%; min-width: 0; }
+        .insta-carousel-slide iframe { display: block; border: none; width: 100%; height: 560px; }
+        @media (max-width: 640px) { .insta-carousel-slide iframe { height: 480px; } }
+
+        /* Carousel nav dots */
+        .carousel-dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; transition: all 0.2s; cursor: pointer; }
+        .carousel-dot.active { background: #8b5cf6; width: 22px; border-radius: 4px; }
+
+        /* Carousel arrow buttons */
+        .carousel-btn { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.95); border: 1.5px solid #e2e8f0; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.12); transition: all 0.15s; font-size: 15px; color: #334155; }
+        .carousel-btn:hover { background: #f8fafc; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transform: scale(1.05); }
+        .carousel-btn:disabled { opacity: 0.3; cursor: default; transform: none; }
+
+        /* YouTube embed */
+        .yt-embed-wrap { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background: #000; }
+        .yt-embed-wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+
+        /* Category pill */
+        .study-category-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+
+        /* Filter chip */
+        .study-filter-chip { padding: 6px 16px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1.5px solid transparent; cursor: pointer; transition: all 0.15s; }
+        .study-filter-chip.active { background: #7c3aed; color: #fff; border-color: #7c3aed; }
+        .study-filter-chip:not(.active) { background: #fff; color: #64748b; border-color: #e2e8f0; }
+        .study-filter-chip:not(.active):hover { border-color: #7c3aed; color: #7c3aed; }
         
         .avatar-option { transition: all 0.2s; border: 3px solid transparent; cursor: pointer; }
         .avatar-option.selected { border-color: #4f46e5; transform: scale(1.1); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
@@ -246,9 +279,13 @@
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                         <span class="hidden xs:inline">Home</span>
                     </button>
+                    <button onclick="window.switchView('view-study')" id="nav-tab-study" class="nav-tab">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                        <span>Study</span>
+                    </button>
                     <button onclick="window.switchView('view-certificates')" id="nav-tab-certificates" class="nav-tab">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                        <span>Certificates</span>
+                        <span>Certs</span>
                     </button>
                     <button onclick="window.switchView('view-people')" id="nav-tab-people" class="nav-tab">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -642,6 +679,36 @@
         </div>
 
     </main>
+
+    <!-- ===== STUDY CONTENT VIEW ===== -->
+    <div id="view-study" class="hidden-view fade-in max-w-5xl mx-auto px-4 py-8 space-y-8">
+
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h2 class="text-2xl font-black text-slate-900">📚 Study Material</h2>
+                <p class="text-slate-500 text-sm font-medium mt-1">Read and watch everything you need to prepare for your test — all in one place.</p>
+            </div>
+            <!-- Filter chips -->
+            <div id="study-filter-bar" class="flex gap-2 flex-wrap"></div>
+        </div>
+
+        <!-- Search -->
+        <div class="relative">
+            <input type="text" id="study-search" oninput="window.filterStudyView()" placeholder="Search by title or topic…" class="w-full px-5 py-3.5 pl-11 rounded-2xl bg-white border border-slate-200 focus:border-violet-400 outline-none font-bold text-slate-700 shadow-sm transition-all">
+            <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+        </div>
+
+        <!-- Content grid -->
+        <div id="study-content-grid" class="space-y-10"></div>
+
+        <!-- Empty state -->
+        <div id="study-empty" class="hidden text-center py-20 bg-white rounded-3xl border border-slate-200">
+            <div class="text-6xl mb-4">📖</div>
+            <p class="font-black text-slate-600 text-lg">No study material yet</p>
+            <p class="text-sm text-slate-400 mt-2">Your teacher will publish Instagram posts and YouTube videos here for you to study.</p>
+        </div>
+    </div>
 
     <!-- PEOPLE VIEW -->
     <div id="view-people" class="hidden-view fade-in max-w-5xl mx-auto px-4 py-8 space-y-6">
@@ -1156,7 +1223,7 @@
         let userData = null; 
         let pendingGoogleUser = null; 
         let authMethod = null;
-        let globalData = { users: {}, results: [], quizzes: [], config: {}, seasons: [], certificates: [] };
+        let globalData = { users: {}, results: [], quizzes: [], config: {}, seasons: [], certificates: [], studyContent: [] };
         let activeSession = null;
         let unsubscribes = [];
         let tempPendingQuizId = null; 
@@ -1466,7 +1533,7 @@
         // ------------------------------------
 
         window.switchView = (id) => {
-            ['view-auth', 'view-onboarding', 'view-dashboard', 'view-exam', 'view-review', 'view-people', 'view-profile', 'view-certificates'].forEach(v => {
+            ['view-auth', 'view-onboarding', 'view-dashboard', 'view-exam', 'view-review', 'view-people', 'view-profile', 'view-certificates', 'view-study'].forEach(v => {
                 const el = document.getElementById(v);
                 if(el) el.classList.add('hidden-view');
             });
@@ -1477,7 +1544,7 @@
             }
 
             // Update nav tabs
-            ['dashboard', 'people', 'certificates'].forEach(tab => {
+            ['dashboard', 'people', 'certificates', 'study'].forEach(tab => {
                 const navTab = document.getElementById(`nav-tab-${tab}`);
                 if (navTab) {
                     navTab.className = id === `view-${tab}` ? 'nav-tab active' : 'nav-tab';
@@ -1500,6 +1567,10 @@
             // Render certificates when switching to certificates view
             if (id === 'view-certificates') {
                 window.renderMyCertificates();
+            }
+            // Render study content
+            if (id === 'view-study') {
+                window.renderStudyView();
             }
         };
 
@@ -1948,6 +2019,13 @@
                     window.renderMyCertificates();
                 }
                 if (viewingProfileUid) renderProfileCertSection(viewingProfileUid);
+            }));
+
+            unsubscribes.push(onSnapshot(getPublicCol('study_content'), snapshot => {
+                globalData.studyContent = snapshot.empty ? [] : snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+                if (!document.getElementById('view-study').classList.contains('hidden-view')) {
+                    window.renderStudyView();
+                }
             }));
         };
 
@@ -3368,6 +3446,282 @@
         }, true);
 
         // ========== END CERTIFICATES ==========
+
+        // ========================
+        // STUDY CONTENT — USER VIEW
+        // ========================
+
+        // State: currently active filter & search
+        let studyFilterActive = 'all';
+        // Track carousel state: { [cardId]: currentIndex }
+        const carouselState = {};
+
+        // Extract YouTube ID from various URL formats
+        const extractYTId = (url) => {
+            if (!url) return null;
+            const patterns = [
+                /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+                /[?&]v=([a-zA-Z0-9_-]{11})/
+            ];
+            for (const p of patterns) { const m = url.match(p); if (m) return m[1]; }
+            return null;
+        };
+
+        window.renderStudyView = () => {
+            const grid = document.getElementById('study-content-grid');
+            const empty = document.getElementById('study-empty');
+            const filterBar = document.getElementById('study-filter-bar');
+            if (!grid) return;
+
+            const allItems = (globalData.studyContent || []).sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+
+            // Build category filter chips
+            const categories = ['All', ...new Set(allItems.map(x => x.category).filter(Boolean))];
+            filterBar.innerHTML = categories.map(cat => {
+                const val = cat === 'All' ? 'all' : cat;
+                const isActive = studyFilterActive === val;
+                return `<button onclick="window.setStudyFilter('${val}')" class="study-filter-chip ${isActive ? 'active' : ''}">${cat}</button>`;
+            }).join('');
+
+            // Apply search + filter
+            const searchTerm = (document.getElementById('study-search')?.value || '').toLowerCase();
+            const filtered = allItems.filter(item => {
+                const matchFilter = studyFilterActive === 'all' || item.category === studyFilterActive || item.type === studyFilterActive;
+                const matchSearch = !searchTerm || item.title?.toLowerCase().includes(searchTerm) || item.category?.toLowerCase().includes(searchTerm);
+                return matchFilter && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            // Group by category for section headers
+            const grouped = {};
+            filtered.forEach(item => {
+                const key = item.category || 'General';
+                if (!grouped[key]) grouped[key] = [];
+                grouped[key].push(item);
+            });
+
+            grid.innerHTML = Object.entries(grouped).map(([cat, items]) => `
+                <div class="space-y-5">
+                    <div class="flex items-center gap-3">
+                        <h3 class="text-lg font-black text-slate-800">${cat}</h3>
+                        <div class="flex-1 h-px bg-slate-200"></div>
+                        <span class="text-xs font-bold text-slate-400">${items.length} item${items.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    ${items.map(item => item.type === 'youtube' ? renderYouTubeCard(item) : renderInstagramCard(item)).join('')}
+                </div>
+            `).join('');
+
+            // After DOM is painted, init Instagram embeds via script injection
+            requestAnimationFrame(() => {
+                initInstagramEmbeds();
+            });
+        };
+
+        window.filterStudyView = () => {
+            window.renderStudyView();
+        };
+
+        window.setStudyFilter = (val) => {
+            studyFilterActive = val;
+            window.renderStudyView();
+        };
+
+        // ---- YouTube Card ----
+        const renderYouTubeCard = (item) => {
+            const vid = item.youtubeId || extractYTId(item.originalUrl || '');
+            const thumbUrl = vid ? `https://img.youtube.com/vi/${vid}/maxresdefault.jpg` : '';
+            const dateStr = item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+            return `
+            <div class="study-card" id="sc-card-${item.id}">
+                <!-- Card header -->
+                <div class="flex items-start justify-between gap-3 p-5 pb-3">
+                    <div class="flex items-start gap-3 flex-1 min-w-0">
+                        <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="font-black text-slate-800 text-base leading-tight truncate">${item.title}</div>
+                            <div class="flex items-center gap-2 mt-1">
+                                ${item.category ? `<span class="study-category-pill bg-violet-100 text-violet-700">${item.category}</span>` : ''}
+                                <span class="text-[11px] text-slate-400 font-medium">${dateStr}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <span class="flex-shrink-0 px-2 py-1 bg-red-100 text-red-700 text-[10px] font-black rounded-lg uppercase">YouTube</span>
+                </div>
+                <!-- Embed -->
+                ${vid ? `
+                <div class="mx-5 mb-5 rounded-2xl overflow-hidden shadow-sm">
+                    <div class="yt-embed-wrap">
+                        <iframe src="https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1" title="${item.title}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+                    </div>
+                </div>` : `<div class="mx-5 mb-5 p-4 bg-red-50 rounded-2xl text-red-600 font-bold text-sm">⚠️ Video unavailable</div>`}
+            </div>`;
+        };
+
+        // ---- Instagram Carousel Card ----
+        const renderInstagramCard = (item) => {
+            const posts = item.posts || [];
+            const cardId = `sc-card-${item.id}`;
+            const dateStr = item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+            const multiPost = posts.length > 1;
+
+            if (!carouselState[item.id]) carouselState[item.id] = 0;
+
+            const slides = posts.map((p, i) => `
+                <div class="insta-carousel-slide">
+                    <iframe
+                        src="https://www.instagram.com/p/${p.shortcode}/embed/captioned/"
+                        scrolling="no"
+                        frameborder="0"
+                        allowtransparency="true"
+                        loading="lazy"
+                        title="Instagram post ${i+1} of ${posts.length}"
+                    ></iframe>
+                </div>`).join('');
+
+            const dots = multiPost ? posts.map((_, i) => `
+                <span class="carousel-dot${i === 0 ? ' active' : ''}" onclick="window.carouselGoTo('${item.id}',${i})" title="Slide ${i+1}"></span>
+            `).join('') : '';
+
+            const postCounter = multiPost ? `
+                <span id="sc-counter-${item.id}" class="text-xs font-black text-slate-500 bg-slate-100 px-3 py-1 rounded-full">Post 1 of ${posts.length}</span>` : '';
+
+            return `
+            <div class="study-card" id="${cardId}">
+                <!-- Card header -->
+                <div class="flex items-start justify-between gap-3 p-5 pb-3">
+                    <div class="flex items-start gap-3 flex-1 min-w-0">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)">
+                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="font-black text-slate-800 text-base leading-tight">${item.title}</div>
+                            <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                ${item.category ? `<span class="study-category-pill bg-pink-100 text-pink-700">${item.category}</span>` : ''}
+                                ${multiPost ? `<span class="study-category-pill bg-slate-100 text-slate-600">${posts.length} slides</span>` : ''}
+                                <span class="text-[11px] text-slate-400 font-medium">${dateStr}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <span class="flex-shrink-0 px-2 py-1 text-[10px] font-black rounded-lg uppercase text-white" style="background:linear-gradient(135deg,#e6683c,#cc2366)">Instagram</span>
+                </div>
+
+                ${multiPost ? `
+                <!-- Swipe hint banner -->
+                <div class="mx-5 mb-3 flex items-center gap-2 bg-violet-50 border border-violet-100 rounded-xl px-4 py-2.5">
+                    <svg class="w-4 h-4 text-violet-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"/></svg>
+                    <p class="text-[11px] font-bold text-violet-700">This post has <strong>${posts.length} slides</strong> — use the arrows or swipe to see all images. Don't miss any!</p>
+                </div>` : ''}
+
+                <!-- Carousel container -->
+                <div class="mx-5 relative overflow-hidden rounded-2xl border border-slate-100 shadow-sm bg-slate-50">
+                    <div class="overflow-hidden">
+                        <div class="insta-carousel-track" id="sc-track-${item.id}">
+                            ${slides}
+                        </div>
+                    </div>
+
+                ${multiPost ? `
+                <!-- Arrows (overlaid) -->
+                <div class="absolute inset-y-0 left-3 flex items-center" style="pointer-events:none;">
+                    <button class="carousel-btn" id="sc-prev-${item.id}" onclick="window.carouselPrev('${item.id}',${posts.length})" disabled title="Previous post" style="pointer-events:auto;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 18l-6-6 6-6"/></svg>
+                    </button>
+                </div>
+                <div class="absolute inset-y-0 right-3 flex items-center" style="pointer-events:none;">
+                    <button class="carousel-btn" id="sc-next-${item.id}" onclick="window.carouselNext('${item.id}',${posts.length})" title="Next post" style="pointer-events:auto;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 18l6-6-6-6"/></svg>
+                    </button>
+                </div>` : ''}
+                </div>
+
+                ${multiPost ? `
+                <!-- Dots + counter -->
+                <div class="flex items-center justify-center gap-3 px-5 py-4">
+                    <div class="flex items-center gap-1.5" id="sc-dots-${item.id}">${dots}</div>
+                    ${postCounter}
+                </div>` : '<div class="pb-2"></div>'}
+            </div>`;
+        };
+
+        // ---- Carousel Controls ----
+        window.carouselGoTo = (itemId, idx) => {
+            const posts = (globalData.studyContent.find(x => x.id === itemId)?.posts || []);
+            const total = posts.length;
+            if (idx < 0 || idx >= total) return;
+            carouselState[itemId] = idx;
+            _applyCarousel(itemId, idx, total);
+        };
+
+        window.carouselNext = (itemId, total) => {
+            const cur = carouselState[itemId] || 0;
+            if (cur < total - 1) window.carouselGoTo(itemId, cur + 1);
+        };
+
+        window.carouselPrev = (itemId, total) => {
+            const cur = carouselState[itemId] || 0;
+            if (cur > 0) window.carouselGoTo(itemId, cur - 1);
+        };
+
+        const _applyCarousel = (itemId, idx, total) => {
+            const track = document.getElementById(`sc-track-${itemId}`);
+            if (track) track.style.transform = `translateX(-${idx * 100}%)`;
+
+            // Update dots
+            const dotsEl = document.getElementById(`sc-dots-${itemId}`);
+            if (dotsEl) {
+                dotsEl.querySelectorAll('.carousel-dot').forEach((d, i) => {
+                    d.classList.toggle('active', i === idx);
+                });
+            }
+
+            // Update counter
+            const counter = document.getElementById(`sc-counter-${itemId}`);
+            if (counter) counter.innerText = `Post ${idx + 1} of ${total}`;
+
+            // Update arrow states
+            const prevBtn = document.getElementById(`sc-prev-${itemId}`);
+            const nextBtn = document.getElementById(`sc-next-${itemId}`);
+            if (prevBtn) prevBtn.disabled = idx === 0;
+            if (nextBtn) nextBtn.disabled = idx === total - 1;
+        };
+
+        // Touch/swipe support for carousels
+        const initCarouselTouch = () => {
+            document.querySelectorAll('[id^="sc-track-"]').forEach(track => {
+                const itemId = track.id.replace('sc-track-', '');
+                const item = globalData.studyContent.find(x => x.id === itemId);
+                const total = (item?.posts || []).length;
+                if (total <= 1) return;
+
+                let startX = 0, isDragging = false;
+                track.addEventListener('touchstart', e => { startX = e.touches[0].clientX; isDragging = true; }, { passive: true });
+                track.addEventListener('touchend', e => {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    const diff = startX - e.changedTouches[0].clientX;
+                    if (Math.abs(diff) > 50) {
+                        diff > 0 ? window.carouselNext(itemId, total) : window.carouselPrev(itemId, total);
+                    }
+                }, { passive: true });
+            });
+        };
+
+        // Trigger Instagram's embed.js to process iframes
+        const initInstagramEmbeds = () => {
+            if (window.instgrm && window.instgrm.Embeds) {
+                window.instgrm.Embeds.process();
+            }
+            // Init touch on all carousels
+            setTimeout(initCarouselTouch, 300);
+        };
 
         window.onload = init;
     </script>
