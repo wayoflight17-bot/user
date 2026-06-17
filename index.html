@@ -67,6 +67,14 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 
         /* ===== STUDY CONTENT STYLES ===== */
+        /* Shake animation for wrong answers */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+        .shake { animation: shake 0.4s ease-in-out; }
+
         /* Hero gradient search */
         #study-search::placeholder { color: rgba(199,210,254,0.7); }
 
@@ -566,55 +574,99 @@
         </div>
 
         <!-- EXAM SESSION -->
-        <div id="view-exam" class="hidden-view fade-in max-w-3xl mx-auto py-4">
-            <div class="bg-slate-900 text-white p-4 rounded-2xl mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-xl border border-slate-700">
-                <div class="flex items-center gap-3 min-w-0">
-                    <span class="w-3 h-3 bg-rose-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.8)] flex-shrink-0"></span>
-                    <span class="text-sm font-black uppercase tracking-widest truncate" id="active-exam-title">Exam Name</span>
-                </div>
-                <div class="flex items-center justify-between sm:justify-end gap-4">
-                    <span class="text-[10px] uppercase font-black tracking-widest text-rose-400 border border-rose-500/50 bg-rose-500/10 px-2 py-1 rounded">Anti-Cheat Active</span>
-                    <span id="exam-timer" class="text-2xl font-black tabular-nums tracking-wider text-emerald-400">00:00</span>
-                </div>
-            </div>
+        <!-- EXAM VIEW - DUOLINGO STYLE -->
+        <div id="view-exam" class="hidden-view fade-in bg-gradient-to-b from-slate-50 to-white min-h-screen pb-20">
             
-            <div class="glass p-5 sm:p-8 md:p-12 rounded-[2.5rem] border border-slate-200 shadow-2xl relative overflow-hidden bg-white">
-                <div class="absolute top-0 left-0 w-full h-1.5 bg-slate-100">
-                    <div id="exam-progress-bar" class="h-full bg-indigo-500 transition-all duration-300 rounded-r-full" style="width: 0%"></div>
-                </div>
-                
-                <div class="flex justify-between items-center mb-8 mt-2">
-                    <span class="bg-indigo-50 text-indigo-700 font-black px-4 py-1.5 rounded-xl text-sm border border-indigo-100" id="question-counter">Q 1/1</span>
-                </div>
-                
-                <div class="min-h-[250px]">
-                    <h3 id="question-text" class="text-2xl font-bold mb-8 text-slate-800 leading-relaxed">Loading question...</h3>
-                    <div id="options-container" class="grid grid-cols-1 gap-4">
-                        <!-- Options injected here -->
+            <!-- TOP BAR: Lives, XP, Streak, Timer -->
+            <div class="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
+                <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between sm:py-4">
+                    <!-- Left: Lives & Streak -->
+                    <div class="flex items-center gap-4">
+                        <!-- Hearts/Lives -->
+                        <div class="flex items-center gap-2">
+                            <div id="exam-lives-display" class="flex gap-1"></div>
+                        </div>
+                        <!-- Streak -->
+                        <div id="exam-streak" class="hidden flex items-center gap-1.5 px-3 py-1.5 bg-orange-100 rounded-full">
+                            <span class="text-lg">🔥</span>
+                            <span class="font-black text-orange-700 text-sm" id="streak-count">0</span>
+                        </div>
                     </div>
-                    <div id="question-skeleton" class="hidden-view animate-pulse">
-                        <div class="h-7 bg-slate-200 rounded-lg w-3/4 mb-3"></div>
-                        <div class="h-7 bg-slate-200 rounded-lg w-1/2 mb-8"></div>
-                        <div class="grid grid-cols-1 gap-4">
-                            <div class="h-16 bg-slate-100 border-2 border-slate-100 rounded-2xl"></div>
-                            <div class="h-16 bg-slate-100 border-2 border-slate-100 rounded-2xl"></div>
-                            <div class="h-16 bg-slate-100 border-2 border-slate-100 rounded-2xl"></div>
-                            <div class="h-16 bg-slate-100 border-2 border-slate-100 rounded-2xl"></div>
+
+                    <!-- Center: Progress -->
+                    <div class="hidden sm:flex flex-col items-center gap-1.5 flex-1 mx-6">
+                        <div id="question-counter" class="text-xs font-black text-slate-500 uppercase tracking-widest">Question 1 of 1</div>
+                        <div class="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div id="exam-progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Right: XP & Timer -->
+                    <div class="flex items-center gap-3 sm:gap-4">
+                        <!-- XP -->
+                        <div class="flex items-center gap-1 px-3 py-1.5 bg-yellow-100 rounded-full">
+                            <span class="text-lg">⭐</span>
+                            <span class="font-black text-yellow-700 text-sm" id="exam-xp-display">0</span>
+                        </div>
+                        <!-- Timer -->
+                        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full" id="timer-display" style="background: #f0fdf4; color: #15803d;">
+                            <span class="text-sm">⏱️</span>
+                            <span id="exam-timer" class="font-black text-sm tabular-nums" style="color: #15803d;">00:00</span>
                         </div>
                     </div>
                 </div>
-                
-                <div class="mt-12 pt-8 border-t border-slate-100 flex flex-col sm:flex-row gap-3 sm:gap-0 justify-between items-stretch sm:items-center">
-                    <button onclick="window.navQuestion(-1)" id="btn-prev" class="order-2 sm:order-1 px-6 py-3 font-bold text-slate-400 disabled:opacity-30 hover:text-slate-800 hover:bg-slate-50 rounded-xl transition-all flex justify-center items-center gap-2">
-                        ← Previous
-                    </button>
-                    <button onclick="window.navQuestion(1)" id="btn-next" class="order-1 sm:order-2 px-8 py-3 bg-indigo-50 text-indigo-700 rounded-xl font-bold hover:bg-indigo-100 transition-all flex justify-center items-center gap-2">
-                        Next Question →
-                    </button>
-                    <button onclick="window.submitExam()" id="btn-finish" class="hidden-view order-1 sm:order-2 px-8 py-4 bg-emerald-500 text-white rounded-xl font-black hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-200 hover:scale-105 active:scale-95 flex justify-center items-center">
-                        Submit Assessment
-                    </button>
+            </div>
+
+            <!-- QUESTION CARD - LARGE & ENGAGING -->
+            <div class="max-w-2xl mx-auto px-4 py-8">
+                <!-- Question Card -->
+                <div class="bg-white rounded-3xl shadow-xl border-2 border-slate-100 overflow-hidden">
+                    
+                    <!-- Card Header -->
+                    <div class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 px-6 sm:px-8 py-6">
+                        <div class="text-white text-center">
+                            <div id="question-text" class="text-2xl sm:text-3xl font-black leading-tight mb-2">Loading question...</div>
+                            <div id="question-hint" class="text-indigo-100 text-sm font-medium mt-2"></div>
+                        </div>
+                    </div>
+
+                    <!-- Question Body -->
+                    <div class="px-6 sm:px-8 py-8 min-h-[300px] flex flex-col justify-center">
+                        <div id="options-container" class="space-y-4">
+                            <!-- Options injected here -->
+                        </div>
+                        
+                        <!-- Loading skeleton -->
+                        <div id="question-skeleton" class="hidden-view space-y-4">
+                            <div class="h-20 bg-slate-100 rounded-2xl animate-pulse"></div>
+                            <div class="h-20 bg-slate-100 rounded-2xl animate-pulse"></div>
+                            <div class="h-20 bg-slate-100 rounded-2xl animate-pulse"></div>
+                            <div class="h-20 bg-slate-100 rounded-2xl animate-pulse"></div>
+                        </div>
+
+                        <!-- Feedback message -->
+                        <div id="answer-feedback" class="hidden-view mt-8 p-5 rounded-2xl text-center font-bold text-lg animate-pulse">
+                            <div id="feedback-text"></div>
+                            <div id="correct-answer-display" class="mt-3 text-sm font-medium"></div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Buttons -->
+                    <div class="border-t border-slate-100 px-6 sm:px-8 py-6 flex gap-3 justify-between">
+                        <button onclick="window.navQuestion(-1)" id="btn-prev" class="px-6 py-3 rounded-2xl font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-default transition-all">
+                            ← Previous
+                        </button>
+                        <button onclick="window.navQuestion(1)" id="btn-next" class="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 active:scale-95 transition-all">
+                            Next →
+                        </button>
+                        <button onclick="window.submitExam()" id="btn-finish" class="hidden-view px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-2xl font-black hover:shadow-lg active:scale-95 transition-all shadow-lg shadow-green-300">
+                            ✓ Finish
+                        </button>
+                    </div>
                 </div>
+
+                <!-- Confetti Canvas -->
+                <canvas id="confetti-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000;"></canvas>
             </div>
         </div>
 
@@ -1240,6 +1292,14 @@
         let authMethod = null;
         let globalData = { users: {}, results: [], quizzes: [], config: {}, seasons: [], certificates: [], studyContent: [] };
         let activeSession = null;
+        let examState = {
+            hearts: 2,
+            maxHearts: 2,
+            totalXP: 0,
+            streak: 0,
+            answered: 0,
+            correct: 0
+        };
         let unsubscribes = [];
         let tempPendingQuizId = null; 
         let currentLbTab = 'alltime'; 
@@ -2448,12 +2508,140 @@
         // ------------------------------------
 
 
+        // ===== EXAM STATE & DISPLAY =====
+        window.updateExamDisplay = () => {
+            // Update hearts
+            const livesEl = document.getElementById('exam-lives-display');
+            if (livesEl) {
+                livesEl.innerHTML = Array.from({length: examState.maxHearts}, (_, i) => {
+                    const filled = i < examState.hearts;
+                    return `<span style="font-size:24px;cursor:default;opacity:${filled ? 1 : 0.4};transition:all 0.3s">${filled ? '❤️' : '🤍'}</span>`;
+                }).join('');
+            }
+            // Update XP
+            const xpEl = document.getElementById('exam-xp-display');
+            if (xpEl) xpEl.innerText = examState.totalXP;
+            // Update streak
+            const streakEl = document.getElementById('exam-streak');
+            const streakCountEl = document.getElementById('streak-count');
+            if (streakEl && streakCountEl) {
+                if (examState.streak > 0) {
+                    streakEl.classList.remove('hidden');
+                    streakCountEl.innerText = examState.streak;
+                } else {
+                    streakEl.classList.add('hidden');
+                }
+            }
+        };
+
+        // Confetti animation
+        const confetti = () => {
+            const canvas = document.getElementById('confetti-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = Array.from({length: 50}, () => ({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height - canvas.height,
+                vx: (Math.random() - 0.5) * 8,
+                vy: Math.random() * 5 + 5,
+                life: 1,
+                decay: Math.random() * 0.015 + 0.015,
+                size: Math.random() * 6 + 4,
+                color: ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A'][Math.floor(Math.random() * 5)]
+            }));
+
+            const animate = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.y += p.vy;
+                    p.x += p.vx;
+                    p.vy += 0.3; // gravity
+                    p.life -= p.decay;
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = p.life;
+                    ctx.fillRect(p.x, p.y, p.size, p.size);
+                });
+                ctx.globalAlpha = 1;
+
+                if (particles.some(p => p.life > 0)) {
+                    requestAnimationFrame(animate);
+                }
+            };
+            animate();
+        };
+
+        window.showAnswerFeedback = async (isCorrect, correctAnswer = '') => {
+            examState.isAnswered = true;
+            examState.isCorrect = isCorrect;
+            const feedbackEl = document.getElementById('answer-feedback');
+            const feedbackText = document.getElementById('feedback-text');
+            const correctDisplay = document.getElementById('correct-answer-display');
+
+            if (isCorrect) {
+                examState.hearts = Math.min(examState.hearts + 1, examState.maxHearts);
+                examState.totalXP += 10;
+                examState.streak += 1;
+                examState.correct += 1;
+
+                feedbackEl.className = 'mt-8 p-6 rounded-2xl text-center font-bold text-lg animate-bounce bg-gradient-to-r from-green-100 to-emerald-100 border-2 border-green-400';
+                feedbackText.innerHTML = '✅ Correct! +10 XP';
+                feedbackText.style.color = '#10b981';
+                correctDisplay.innerHTML = '';
+
+                confetti();
+            } else {
+                examState.hearts = Math.max(0, examState.hearts - 1);
+                examState.streak = 0;
+
+                feedbackEl.className = 'mt-8 p-6 rounded-2xl text-center font-bold text-lg bg-gradient-to-r from-red-100 to-rose-100 border-2 border-red-400 shake';
+                feedbackText.innerHTML = '❌ Incorrect';
+                feedbackText.style.color = '#ef4444';
+                
+                if (correctAnswer) {
+                    correctDisplay.innerHTML = `<div class="mt-2 text-sm font-medium text-slate-700">Correct answer: <span class="font-black text-green-600">"${correctAnswer}"</span></div>`;
+                }
+            }
+
+            window.updateExamDisplay();
+            feedbackEl.classList.remove('hidden-view');
+            
+            // Disable further input
+            document.getElementById('options-container').style.pointerEvents = 'none';
+            document.getElementById('options-container').style.opacity = '0.6';
+            
+            // Auto next after 2 seconds
+            await new Promise(r => setTimeout(r, 2000));
+            
+            examState.answered += 1;
+            if (examState.hearts === 0) {
+                window.submitExam();
+                return;
+            }
+
+            window.navQuestion(1);
+        };
+
         const startExam = async (quizId) => {
             const quizTemplate = MASTER_QUIZZES.find(q => q.id === quizId);
             if(!quizTemplate) return alert("Quiz not found.");
 
             const taken = globalData.results.some(r => r.studentId === currentUser.uid && r.testId === quizId);
             if(taken) return alert("You have already completed this challenge.");
+
+            // Reset exam state
+            examState = {
+                hearts: 2,
+                maxHearts: 2,
+                totalXP: 0,
+                streak: 0,
+                answered: 0,
+                correct: 0,
+                isAnswered: false,
+                isCorrect: false
+            };
 
             const resumable = await checkForResumableSession(quizId);
 
@@ -2492,7 +2680,7 @@
                 };
             }
 
-            document.getElementById('active-exam-title').innerText = activeSession.title;
+            window.updateExamDisplay();
             window.switchView('view-exam');
             cheatAttempts = 0; // reset copy-cheat counter for new exam
             // Start DevTools detection
@@ -2519,31 +2707,59 @@
             const idx = activeSession.currentIndex;
             const qData = activeSession.questions[idx];
 
+            // Reset answer state
+            examState.isAnswered = false;
+            examState.isCorrect = false;
+
+            // Update progress and question counter
             document.getElementById('question-counter').innerText = `Question ${idx + 1} of ${total}`;
             document.getElementById('exam-progress-bar').style.width = `${((idx) / total) * 100}%`;
             document.getElementById('question-text').innerText = qData.q;
+            document.getElementById('question-hint').innerText = '';
+
+            // Hide feedback message
+            const feedbackEl = document.getElementById('answer-feedback');
+            feedbackEl.classList.add('hidden-view');
 
             const container = document.getElementById('options-container');
+            container.style.pointerEvents = 'auto';
+            container.style.opacity = '1';
+
+            // Show/hide next button based on position
+            document.getElementById('btn-prev').disabled = idx === 0;
+            document.getElementById('btn-next').classList.toggle('hidden-view', idx >= total - 1);
+            document.getElementById('btn-finish').classList.toggle('hidden-view', idx < total - 1);
 
             if (qData.type === 'mcq') {
-                container.innerHTML = qData.options.map(opt => {
+                container.innerHTML = qData.options.map((opt, optIdx) => {
                     const isSelected = activeSession.userAnswers[idx] === opt;
+                    const letter = String.fromCharCode(65 + optIdx); // A, B, C, D
                     return `
-                    <div onclick="window.pickAnswer('${opt.replace(/'/g, "\\'")}', 'mcq')" class="p-5 border-2 rounded-2xl cursor-pointer transition-all flex items-center gap-4 ${isSelected ? 'border-indigo-600 bg-indigo-50 ring-2 ring-indigo-500/20 shadow-md' : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50'}">
-                        <div class="w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${isSelected ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300'}">
-                            ${isSelected ? '<div class="w-2 h-2 bg-white rounded-full"></div>' : ''}
+                    <div onclick="window.pickAnswer('${opt.replace(/'/g, "\\'")}', 'mcq', '${opt.replace(/'/g, "\\'")}')" 
+                         class="p-5 border-2 rounded-2xl cursor-pointer transition-all flex items-center gap-4 font-bold ${isSelected ? 'border-indigo-600 bg-gradient-to-r from-indigo-50 to-purple-50 ring-2 ring-indigo-500/30 shadow-lg' : 'border-slate-200 hover:border-indigo-400 bg-white hover:bg-slate-50 hover:shadow-md'}" 
+                         style="min-height:80px;padding:20px;">
+                        <div class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center font-black text-lg flex items-center justify-center ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600'}">
+                            ${letter}
                         </div>
-                        <span class="font-bold text-slate-700 text-lg">${opt}</span>
+                        <span class="text-slate-700 text-lg leading-snug">${opt}</span>
                     </div>`;
                 }).join('');
             } 
             else if (qData.type === 'fill') {
                 const currentVal = activeSession.userAnswers[idx] || '';
                 container.innerHTML = `
-                    <div class="p-2">
-                        <input type="text" value="${currentVal}" oninput="window.pickAnswer(this.value, 'fill')" onblur="saveProgress()" class="w-full text-xl font-bold p-5 border-2 border-slate-200 focus:border-indigo-500 rounded-2xl outline-none transition-colors" placeholder="Type your answer here...">
+                    <div class="space-y-4">
+                        <input type="text" value="${currentVal}" 
+                               oninput="window.pickAnswer(this.value, 'fill')" 
+                               onkeypress="if(event.key==='Enter') window.pickAnswer(this.value, 'fill')"
+                               onblur="saveProgress()" 
+                               class="w-full text-xl font-bold p-6 border-3 rounded-2xl outline-none transition-all bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 ${currentVal ? 'border-indigo-500' : 'border-slate-200'}" 
+                               placeholder="Type your answer and press Enter..." 
+                               autocomplete="off">
+                        <div class="text-center text-sm text-slate-400 font-medium">Press Enter or click Next to submit your answer</div>
                     </div>
                 `;
+                setTimeout(() => document.querySelector('input[type="text"]')?.focus(), 100);
             }
             else if (qData.type === 'match') {
                 container.innerHTML = Object.keys(qData.pairs).map((k) => {
@@ -2565,11 +2781,36 @@
             document.getElementById('btn-finish').classList.toggle('hidden-view', !isLast);
         };
 
-        window.pickAnswer = (val, type) => {
-            activeSession.userAnswers[activeSession.currentIndex] = val;
-            if(type === 'mcq') {
+        window.pickAnswer = (val, type, displayVal = '') => {
+            const idx = activeSession.currentIndex;
+            const qData = activeSession.questions[idx];
+
+            // Store the answer
+            activeSession.userAnswers[idx] = val;
+
+            // Check if answer is correct
+            let isCorrect = false;
+            let correctAnswer = '';
+
+            if (type === 'mcq') {
+                isCorrect = val === qData.correct;
+                correctAnswer = qData.correct;
+                // Re-render to show selection immediately
                 renderActiveQuestion();
-                saveProgress();
+            } else if (type === 'fill') {
+                const userAnswer = (val || '').toString().toLowerCase().trim();
+                const correctAns = qData.correct.toString().toLowerCase().trim();
+                isCorrect = userAnswer === correctAns;
+                correctAnswer = qData.correct;
+            }
+
+            saveProgress();
+
+            // Show feedback after a brief delay
+            if (type === 'mcq' || (type === 'fill' && val)) {
+                setTimeout(() => {
+                    window.showAnswerFeedback(isCorrect, correctAnswer);
+                }, examState.isAnswered ? 0 : 300);
             }
         };
 
