@@ -158,9 +158,13 @@
 
         /* Nav tab pill */
         .nav-tab {
-            display: flex; align-items: center; gap: 6px; padding: 8px 16px;
-            border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer;
+            display: flex; align-items: center; gap: 5px; padding: 7px 10px;
+            border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer;
             transition: all 0.2s; color: #64748b; border: none; background: transparent;
+            white-space: nowrap;
+        }
+        @media (min-width: 400px) {
+            .nav-tab { padding: 8px 12px; font-size: 13px; gap: 6px; }
         }
         .nav-tab.active { background: #eef2ff; color: #4f46e5; }
         .nav-tab:hover:not(.active) { background: #f8fafc; color: #334155; }
@@ -226,52 +230,45 @@
 
     <!-- Top Navigation -->
     <nav class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-3 cursor-pointer" onclick="window.switchView('view-dashboard')">
-                <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200 overflow-hidden relative">
+        <div class="max-w-7xl mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 cursor-pointer shrink-0" onclick="window.switchView('view-dashboard')">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200 overflow-hidden relative shrink-0">
                     <img id="app-dynamic-logo" src="" onerror="this.classList.add('hidden'); document.getElementById('app-default-logo').classList.remove('hidden');" class="hidden w-full h-full object-cover absolute inset-0 z-10 bg-white">
-                    <svg id="app-default-logo" class="w-6 h-6 text-white relative z-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    <svg id="app-default-logo" class="w-5 h-5 sm:w-6 sm:h-6 text-white relative z-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                 </div>
-                <h1 class="font-extrabold text-xl tracking-tight text-slate-800 hidden sm:block app-title-text">Way of Light</h1>
+                <h1 class="font-extrabold text-base sm:text-xl tracking-tight text-slate-800 hidden sm:block app-title-text">Way of Light</h1>
             </div>
             
-            <div id="nav-user" class="hidden-view flex items-center gap-3">
-                <!-- Nav Tab Pills -->
-                <div class="hidden md:flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+            <div id="nav-user" class="hidden-view flex items-center gap-2">
+                <!-- Unified tab pills — always visible on ALL screen sizes -->
+                <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
                     <button onclick="window.switchView('view-dashboard')" id="nav-tab-dashboard" class="nav-tab active">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                        Home
+                        <span class="hidden xs:inline">Home</span>
                     </button>
                     <button onclick="window.switchView('view-certificates')" id="nav-tab-certificates" class="nav-tab">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                        Certificates
+                        <span>Certificates</span>
                     </button>
                     <button onclick="window.switchView('view-people')" id="nav-tab-people" class="nav-tab">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                        People
+                        <span>People</span>
                     </button>
                 </div>
-                <div class="hidden sm:flex items-center gap-2 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-xl cursor-pointer hover:bg-indigo-100 transition-colors" onclick="window.copyStudentId()" title="Click to copy your Student ID">
-                    <svg class="w-3.5 h-3.5 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0"/></svg>
-                    <span id="nav-enrollment-id" class="text-xs font-black text-indigo-700 font-mono tracking-wide">--</span>
-                </div>
-                <button onclick="window.switchView('view-certificates')" class="md:hidden w-9 h-9 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors" title="Certificates">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                </button>
-                <button onclick="window.switchView('view-people')" class="md:hidden w-9 h-9 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors" title="People">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                </button>
-                <div class="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors" onclick="window.openProfile()">
+                <!-- Avatar / profile button -->
+                <div class="flex items-center gap-2 bg-slate-50 px-2.5 py-1.5 rounded-full border border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors shrink-0" onclick="window.openProfile()">
                     <img id="nav-avatar" src="" class="w-8 h-8 rounded-full bg-white border border-slate-200 object-cover">
-                    <div class="hidden md:flex flex-col">
-                        <span id="nav-username" class="text-xs font-bold text-slate-700 leading-tight">Student</span>
+                    <div class="hidden sm:flex flex-col leading-tight">
+                        <span id="nav-username" class="text-xs font-bold text-slate-700">Student</span>
                         <span id="nav-rank-title" class="text-[9px] uppercase tracking-widest text-indigo-500 font-black">Level</span>
                     </div>
                 </div>
-                <button onclick="window.handleLogout()" class="px-4 py-2 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-slate-800 transition-all shadow-md active:scale-95">Logout</button>
             </div>
         </div>
     </nav>
+
+    <!-- Hidden element for JS enrollment ID sync (displayed in dashboard) -->
+    <span id="nav-enrollment-id" class="hidden"></span>
 
     <main class="max-w-7xl mx-auto px-4 py-8">
         
@@ -925,9 +922,15 @@
                     </div>
                 </div>
             </div>
-            <div class="p-6 bg-white border-t border-slate-100 flex gap-4">
-                <button onclick="window.closeModal()" class="flex-1 py-4 font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-2xl transition-colors">Cancel</button>
-                <button onclick="window.saveProfile()" class="flex-1 py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition-all">Save Changes</button>
+            <div class="p-6 bg-white border-t border-slate-100 space-y-3">
+                <div class="flex gap-4">
+                    <button onclick="window.closeModal()" class="flex-1 py-4 font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-2xl transition-colors">Cancel</button>
+                    <button onclick="window.saveProfile()" class="flex-1 py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition-all">Save Changes</button>
+                </div>
+                <button onclick="window.closeModal(); window.handleLogout();" class="w-full py-3.5 bg-rose-50 text-rose-600 font-black rounded-2xl border-2 border-rose-100 hover:bg-rose-100 hover:border-rose-200 active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                    Logout
+                </button>
             </div>
         </div>
 
