@@ -391,10 +391,6 @@
 
         <!-- DASHBOARD VIEW -->
         <div id="view-dashboard" class="hidden-view fade-in space-y-8">
-            
-            <div id="season-winners-banner" class="hidden-view w-full bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 rounded-2xl p-4 shadow-lg text-white font-black text-center animate-pulse shadow-orange-500/30 border border-white/20">
-                <!-- Winner announcements go here -->
-            </div>
 
             <div id="hero-banner" class="p-8 md:p-10 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden transition-all duration-700 bg-indigo-600">
                 <div class="absolute right-0 top-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -mr-24 -mt-24 pointer-events-none"></div>
@@ -1963,14 +1959,6 @@
                 }
             });
 
-            const bannerEl = document.getElementById('season-winners-banner');
-            if(winners.length > 0) {
-                bannerEl.innerHTML = winners.join('<br>');
-                bannerEl.classList.remove('hidden-view');
-            } else {
-                bannerEl.classList.add('hidden-view');
-            }
-            
             const useSeason = currentLbTab === 'season';
             const activeSeason = getActiveSeason();
             if (useSeason && !activeSeason) {
