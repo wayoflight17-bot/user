@@ -67,37 +67,32 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 
         /* ===== STUDY CONTENT STYLES ===== */
-        .study-card { background: #fff; border-radius: 24px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); transition: box-shadow 0.2s; }
-        .study-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.10); }
+        /* Hero gradient search */
+        #study-search::placeholder { color: rgba(199,210,254,0.7); }
+
+        /* Season section header */
+        .study-season-section[data-active="true"] { }
 
         /* Instagram carousel */
-        .insta-carousel-track { display: flex; transition: transform 0.35s cubic-bezier(.4,0,.2,1); will-change: transform; }
+        .insta-carousel-track { display: flex; will-change: transform; }
         .insta-carousel-slide { flex: 0 0 100%; min-width: 0; }
-        .insta-carousel-slide iframe { display: block; border: none; width: 100%; height: 560px; }
-        @media (max-width: 640px) { .insta-carousel-slide iframe { height: 480px; } }
+        .insta-carousel-slide iframe { display: block; border: none; width: 100%; height: 540px; }
+        @media (max-width: 640px) { .insta-carousel-slide iframe { height: 460px; } }
 
         /* Carousel nav dots */
-        .carousel-dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; transition: all 0.2s; cursor: pointer; }
-        .carousel-dot.active { background: #8b5cf6; width: 22px; border-radius: 4px; }
+        .carousel-dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; transition: all 0.2s; cursor: pointer; border: none; padding: 0; }
+        .carousel-dot.active { background: #7c3aed; width: 24px; border-radius: 4px; }
 
         /* Carousel arrow buttons */
-        .carousel-btn { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.95); border: 1.5px solid #e2e8f0; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.12); transition: all 0.15s; font-size: 15px; color: #334155; }
-        .carousel-btn:hover { background: #f8fafc; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transform: scale(1.05); }
-        .carousel-btn:disabled { opacity: 0.3; cursor: default; transform: none; }
+        .carousel-btn { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.96); border: 1.5px solid rgba(226,232,240,0.8); display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.14); transition: all 0.15s; color: #334155; }
+        .carousel-btn:hover:not(:disabled) { background: #f8fafc; box-shadow: 0 4px 14px rgba(0,0,0,0.18); transform: scale(1.08); }
+        .carousel-btn:disabled { opacity: 0.25; cursor: default; transform: none; pointer-events: none; }
 
-        /* YouTube embed */
-        .yt-embed-wrap { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background: #000; }
-        .yt-embed-wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+        /* Hide scrollbar on filter bar */
+        #study-filter-bar::-webkit-scrollbar { display: none; }
+        #study-filter-bar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* Category pill */
-        .study-category-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
 
-        /* Filter chip */
-        .study-filter-chip { padding: 6px 16px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1.5px solid transparent; cursor: pointer; transition: all 0.15s; }
-        .study-filter-chip.active { background: #7c3aed; color: #fff; border-color: #7c3aed; }
-        .study-filter-chip:not(.active) { background: #fff; color: #64748b; border-color: #e2e8f0; }
-        .study-filter-chip:not(.active):hover { border-color: #7c3aed; color: #7c3aed; }
-        
         .avatar-option { transition: all 0.2s; border: 3px solid transparent; cursor: pointer; }
         .avatar-option.selected { border-color: #4f46e5; transform: scale(1.1); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
 
@@ -681,32 +676,52 @@
     </main>
 
     <!-- ===== STUDY CONTENT VIEW ===== -->
-    <div id="view-study" class="hidden-view fade-in max-w-5xl mx-auto px-4 py-8 space-y-8">
+    <div id="view-study" class="hidden-view fade-in pb-16">
 
-        <!-- Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-                <h2 class="text-2xl font-black text-slate-900">📚 Study Material</h2>
-                <p class="text-slate-500 text-sm font-medium mt-1">Read and watch everything you need to prepare for your test — all in one place.</p>
+        <!-- Hero header -->
+        <div style="background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#4c1d95 100%)" class="px-4 pt-10 pb-16 mb-0 relative overflow-hidden">
+            <div style="position:absolute;top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,0.04);pointer-events:none"></div>
+            <div style="position:absolute;bottom:-40px;left:-40px;width:160px;height:160px;border-radius:50%;background:rgba(99,102,241,0.12);pointer-events:none"></div>
+            <div class="max-w-3xl mx-auto relative z-10">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center text-xl">📚</div>
+                    <div>
+                        <h2 class="text-2xl font-black text-white tracking-tight">Study Zone</h2>
+                        <p class="text-indigo-200 text-xs font-semibold">All your exam prep in one place</p>
+                    </div>
+                </div>
+                <!-- Active season banner inside hero -->
+                <div id="study-active-season-banner" class="hidden mt-4 flex items-center gap-3 bg-white/10 backdrop-blur border border-white/20 rounded-2xl px-4 py-3">
+                    <span class="text-xl">🏆</span>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-white font-black text-sm" id="study-banner-name">Season</div>
+                        <div class="text-indigo-200 text-xs font-bold" id="study-banner-dates"></div>
+                    </div>
+                    <span class="px-2.5 py-1 bg-emerald-400/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-black rounded-full uppercase tracking-wide">Active</span>
+                </div>
+                <!-- Search bar in hero -->
+                <div class="relative mt-4">
+                    <input type="text" id="study-search" oninput="window.filterStudyView()" placeholder="Search topics, titles…" class="w-full px-5 py-3 pl-11 rounded-2xl bg-white/10 backdrop-blur border border-white/20 text-white placeholder-indigo-300 font-semibold text-sm outline-none focus:bg-white/15 focus:border-white/40 transition-all">
+                    <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+                </div>
             </div>
-            <!-- Filter chips -->
-            <div id="study-filter-bar" class="flex gap-2 flex-wrap"></div>
         </div>
 
-        <!-- Search -->
-        <div class="relative">
-            <input type="text" id="study-search" oninput="window.filterStudyView()" placeholder="Search by title or topic…" class="w-full px-5 py-3.5 pl-11 rounded-2xl bg-white border border-slate-200 focus:border-violet-400 outline-none font-bold text-slate-700 shadow-sm transition-all">
-            <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+        <!-- Filter chips — overlapping the hero bottom -->
+        <div class="max-w-3xl mx-auto px-4 -mt-5 relative z-20 mb-6">
+            <div id="study-filter-bar" class="flex gap-2 flex-wrap overflow-x-auto pb-1 scrollbar-hide"></div>
         </div>
 
-        <!-- Content grid -->
-        <div id="study-content-grid" class="space-y-10"></div>
+        <!-- Main content -->
+        <div class="max-w-3xl mx-auto px-4 space-y-10" id="study-content-grid"></div>
 
         <!-- Empty state -->
-        <div id="study-empty" class="hidden text-center py-20 bg-white rounded-3xl border border-slate-200">
-            <div class="text-6xl mb-4">📖</div>
-            <p class="font-black text-slate-600 text-lg">No study material yet</p>
-            <p class="text-sm text-slate-400 mt-2">Your teacher will publish Instagram posts and YouTube videos here for you to study.</p>
+        <div id="study-empty" class="hidden max-w-3xl mx-auto px-4 mt-8">
+            <div class="text-center py-20 bg-white rounded-3xl border border-slate-200 shadow-sm">
+                <div class="text-6xl mb-4">📖</div>
+                <p class="font-black text-slate-600 text-lg">No study material yet</p>
+                <p class="text-sm text-slate-400 mt-2 font-medium">Your teacher will publish Instagram posts and YouTube videos here for you to study.</p>
+            </div>
         </div>
     </div>
 
@@ -3453,10 +3468,8 @@
 
         // State: currently active filter & search
         let studyFilterActive = 'all';
-        // Track carousel state: { [cardId]: currentIndex }
         const carouselState = {};
 
-        // Extract YouTube ID from various URL formats
         const extractYTId = (url) => {
             if (!url) return null;
             const patterns = [
@@ -3473,21 +3486,48 @@
             const filterBar = document.getElementById('study-filter-bar');
             if (!grid) return;
 
-            const allItems = (globalData.studyContent || []).sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+            const now = Date.now();
+            const activeSeason = (globalData.seasons || []).find(s => now >= s.start && now <= s.end);
 
-            // Build category filter chips
-            const categories = ['All', ...new Set(allItems.map(x => x.category).filter(Boolean))];
-            filterBar.innerHTML = categories.map(cat => {
-                const val = cat === 'All' ? 'all' : cat;
-                const isActive = studyFilterActive === val;
-                return `<button onclick="window.setStudyFilter('${val}')" class="study-filter-chip ${isActive ? 'active' : ''}">${cat}</button>`;
-            }).join('');
+            // --- Active season hero banner ---
+            const banner = document.getElementById('study-active-season-banner');
+            const bannerName = document.getElementById('study-banner-name');
+            const bannerDates = document.getElementById('study-banner-dates');
+            if (banner && activeSeason) {
+                bannerName.innerText = activeSeason.name;
+                bannerDates.innerText = `${new Date(activeSeason.start).toLocaleDateString('en-IN',{day:'numeric',month:'short'})} — ${new Date(activeSeason.end).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}`;
+                banner.classList.remove('hidden');
+            } else if (banner) {
+                banner.classList.add('hidden');
+            }
 
-            // Apply search + filter
-            const searchTerm = (document.getElementById('study-search')?.value || '').toLowerCase();
+            const allItems = (globalData.studyContent || []);
+
+            // --- Build filter chips: All + unique categories ---
+            const categories = [...new Set(allItems.map(x => x.category).filter(Boolean))];
+            if (filterBar) {
+                filterBar.innerHTML = [
+                    { val: 'all', label: '✦ All' },
+                    { val: 'instagram', label: '📸 Instagram' },
+                    { val: 'youtube', label: '▶️ YouTube' },
+                    ...categories.map(c => ({ val: c, label: c }))
+                ].map(({ val, label }) => {
+                    const isAct = studyFilterActive === val;
+                    return `<button onclick="window.setStudyFilter('${val}')" class="flex-shrink-0 px-4 py-2 rounded-full text-xs font-black transition-all ${isAct
+                        ? 'bg-white text-indigo-700 shadow-md'
+                        : 'bg-white/10 text-white/80 hover:bg-white/20'}">${label}</button>`;
+                }).join('');
+            }
+
+            // --- Apply search + filter ---
+            const searchTerm = (document.getElementById('study-search')?.value || '').toLowerCase().trim();
             const filtered = allItems.filter(item => {
-                const matchFilter = studyFilterActive === 'all' || item.category === studyFilterActive || item.type === studyFilterActive;
-                const matchSearch = !searchTerm || item.title?.toLowerCase().includes(searchTerm) || item.category?.toLowerCase().includes(searchTerm);
+                const matchFilter = studyFilterActive === 'all'
+                    || item.type === studyFilterActive
+                    || item.category === studyFilterActive;
+                const matchSearch = !searchTerm
+                    || item.title?.toLowerCase().includes(searchTerm)
+                    || item.category?.toLowerCase().includes(searchTerm);
                 return matchFilter && matchSearch;
             });
 
@@ -3498,229 +3538,217 @@
             }
             empty.classList.add('hidden');
 
-            // Group by category for section headers
-            const grouped = {};
-            filtered.forEach(item => {
-                const key = item.category || 'General';
-                if (!grouped[key]) grouped[key] = [];
-                grouped[key].push(item);
+            // --- Group by season, active season first ---
+            const seasons = (globalData.seasons || []).slice().sort((a, b) => {
+                const aActive = now >= a.start && now <= a.end ? 1 : 0;
+                const bActive = now >= b.start && now <= b.end ? 1 : 0;
+                if (bActive !== aActive) return bActive - aActive;
+                return b.start - a.start; // newest season first
             });
 
-            grid.innerHTML = Object.entries(grouped).map(([cat, items]) => `
-                <div class="space-y-5">
-                    <div class="flex items-center gap-3">
-                        <h3 class="text-lg font-black text-slate-800">${cat}</h3>
+            // Build ordered season bucket list — seasons that actually have content + "general" bucket
+            const buckets = [];
+            seasons.forEach(s => {
+                const items = filtered.filter(x => x.seasonId === s.id)
+                    .sort((a, b) => (a.order || 999) - (b.order || 999) || (a.createdAt || 0) - (b.createdAt || 0));
+                if (items.length > 0) buckets.push({ type: 'season', season: s, items });
+            });
+            const generalItems = filtered.filter(x => !x.seasonId || !seasons.find(s => s.id === x.seasonId))
+                .sort((a, b) => (a.order || 999) - (b.order || 999) || (b.createdAt || 0) - (a.createdAt || 0));
+            if (generalItems.length > 0) buckets.push({ type: 'general', items: generalItems });
+
+            grid.innerHTML = buckets.map(bucket => {
+                const isActive = bucket.type === 'season' && now >= bucket.season.start && now <= bucket.season.end;
+                const isPast = bucket.type === 'season' && now > bucket.season.end;
+
+                const sectionHeader = bucket.type === 'season' ? `
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="flex items-center gap-2.5 ${isActive
+                            ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white'
+                            : 'bg-slate-200 text-slate-600'
+                        } px-4 py-2 rounded-2xl shadow-sm">
+                            <span class="text-base">${isActive ? '🟢' : isPast ? '✅' : '📅'}</span>
+                            <span class="font-black text-sm">${bucket.season.name}</span>
+                            ${isActive ? `<span class="text-[10px] font-black uppercase tracking-wide bg-white/25 px-2 py-0.5 rounded-full">Active</span>` : ''}
+                        </div>
+                        <div class="flex-1 h-px ${isActive ? 'bg-emerald-200' : 'bg-slate-200'}"></div>
+                        <span class="text-xs font-bold text-slate-400">${bucket.items.length} item${bucket.items.length !== 1 ? 's' : ''}</span>
+                    </div>` : `
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="flex items-center gap-2 bg-slate-100 text-slate-600 px-4 py-2 rounded-2xl">
+                            <span class="text-base">📂</span>
+                            <span class="font-black text-sm">General</span>
+                        </div>
                         <div class="flex-1 h-px bg-slate-200"></div>
-                        <span class="text-xs font-bold text-slate-400">${items.length} item${items.length !== 1 ? 's' : ''}</span>
-                    </div>
-                    ${items.map(item => item.type === 'youtube' ? renderYouTubeCard(item) : renderInstagramCard(item)).join('')}
-                </div>
-            `).join('');
+                        <span class="text-xs font-bold text-slate-400">${bucket.items.length} item${bucket.items.length !== 1 ? 's' : ''}</span>
+                    </div>`;
 
-            // After DOM is painted, init Instagram embeds via script injection
-            requestAnimationFrame(() => {
-                initInstagramEmbeds();
-            });
+                // Further group items within a season by category
+                const catGroups = {};
+                bucket.items.forEach(item => {
+                    const key = item.category || '';
+                    if (!catGroups[key]) catGroups[key] = [];
+                    catGroups[key].push(item);
+                });
+
+                const itemsHTML = Object.entries(catGroups).map(([cat, items]) => `
+                    ${cat ? `<div class="flex items-center gap-2 mb-3">
+                        <span class="text-[11px] font-black text-slate-400 uppercase tracking-widest">${cat}</span>
+                        <div class="flex-1 h-px bg-slate-100"></div>
+                    </div>` : ''}
+                    <div class="space-y-4 mb-6">
+                        ${items.map(item => item.type === 'youtube' ? renderYouTubeCard(item) : renderInstagramCard(item)).join('')}
+                    </div>`).join('');
+
+                return `<div class="study-season-section" data-active="${isActive}">${sectionHeader}${itemsHTML}</div>`;
+            }).join('');
+
+            requestAnimationFrame(() => initInstagramEmbeds());
         };
 
-        window.filterStudyView = () => {
-            window.renderStudyView();
-        };
+        window.filterStudyView = () => window.renderStudyView();
+        window.setStudyFilter = (val) => { studyFilterActive = val; window.renderStudyView(); };
 
-        window.setStudyFilter = (val) => {
-            studyFilterActive = val;
-            window.renderStudyView();
-        };
-
-        // ---- YouTube Card ----
+        // ── YouTube Card ──────────────────────────────────────────────────────
         const renderYouTubeCard = (item) => {
             const vid = item.youtubeId || extractYTId(item.originalUrl || '');
-            const thumbUrl = vid ? `https://img.youtube.com/vi/${vid}/maxresdefault.jpg` : '';
-            const dateStr = item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+            const dateStr = item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : '';
             return `
-            <div class="study-card" id="sc-card-${item.id}">
-                <!-- Card header -->
-                <div class="flex items-start justify-between gap-3 p-5 pb-3">
-                    <div class="flex items-start gap-3 flex-1 min-w-0">
-                        <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
-                            <svg class="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                        </div>
-                        <div class="min-w-0">
-                            <div class="font-black text-slate-800 text-base leading-tight truncate">${item.title}</div>
-                            <div class="flex items-center gap-2 mt-1">
-                                ${item.category ? `<span class="study-category-pill bg-violet-100 text-violet-700">${item.category}</span>` : ''}
-                                <span class="text-[11px] text-slate-400 font-medium">${dateStr}</span>
-                            </div>
+            <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-md transition-shadow" id="sc-card-${item.id}">
+                <div class="flex items-start gap-3 p-4 pb-3">
+                    <div class="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-black text-slate-800 text-sm leading-snug">${item.title}</div>
+                        <div class="flex items-center gap-2 mt-1 flex-wrap">
+                            ${item.category ? `<span class="px-2 py-0.5 bg-violet-100 text-violet-700 text-[10px] font-black rounded-full">${item.category}</span>` : ''}
+                            <span class="px-2 py-0.5 bg-red-100 text-red-600 text-[10px] font-black rounded-full">YouTube</span>
+                            <span class="text-[10px] text-slate-400 font-medium">${dateStr}</span>
                         </div>
                     </div>
-                    <span class="flex-shrink-0 px-2 py-1 bg-red-100 text-red-700 text-[10px] font-black rounded-lg uppercase">YouTube</span>
                 </div>
-                <!-- Embed -->
                 ${vid ? `
-                <div class="mx-5 mb-5 rounded-2xl overflow-hidden shadow-sm">
-                    <div class="yt-embed-wrap">
-                        <iframe src="https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1" title="${item.title}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+                <div class="mx-4 mb-4 rounded-2xl overflow-hidden shadow-sm bg-black">
+                    <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
+                        <iframe style="position:absolute;top:0;left:0;width:100%;height:100%;" src="https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1" title="${item.title}" frameborder="0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy"></iframe>
                     </div>
-                </div>` : `<div class="mx-5 mb-5 p-4 bg-red-50 rounded-2xl text-red-600 font-bold text-sm">⚠️ Video unavailable</div>`}
+                </div>` : `<div class="mx-4 mb-4 p-3 bg-red-50 rounded-2xl text-red-600 font-bold text-sm text-center">⚠️ Video unavailable</div>`}
             </div>`;
         };
 
-        // ---- Instagram Carousel Card ----
+        // ── Instagram Carousel Card ───────────────────────────────────────────
         const renderInstagramCard = (item) => {
             const posts = item.posts || [];
-            const cardId = `sc-card-${item.id}`;
-            const dateStr = item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
             const multiPost = posts.length > 1;
-
+            const dateStr = item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : '';
             if (!carouselState[item.id]) carouselState[item.id] = 0;
 
             const slides = posts.map((p, i) => `
-                <div class="insta-carousel-slide">
-                    <iframe
-                        src="https://www.instagram.com/p/${p.shortcode}/embed/captioned/"
-                        scrolling="no"
-                        frameborder="0"
-                        allowtransparency="true"
-                        loading="lazy"
-                        title="Instagram post ${i+1} of ${posts.length}"
-                    ></iframe>
+                <div style="min-width:100%;scroll-snap-align:start;" class="insta-carousel-slide">
+                    <iframe src="https://www.instagram.com/p/${p.shortcode}/embed/captioned/"
+                        scrolling="no" frameborder="0" allowtransparency="true" loading="lazy"
+                        title="Slide ${i+1} of ${posts.length}"></iframe>
                 </div>`).join('');
 
             const dots = multiPost ? posts.map((_, i) => `
-                <span class="carousel-dot${i === 0 ? ' active' : ''}" onclick="window.carouselGoTo('${item.id}',${i})" title="Slide ${i+1}"></span>
-            `).join('') : '';
-
-            const postCounter = multiPost ? `
-                <span id="sc-counter-${item.id}" class="text-xs font-black text-slate-500 bg-slate-100 px-3 py-1 rounded-full">Post 1 of ${posts.length}</span>` : '';
+                <button onclick="window.carouselGoTo('${item.id}',${i})"
+                    class="carousel-dot${i === 0 ? ' active' : ''}"
+                    title="Post ${i+1}"></button>`).join('') : '';
 
             return `
-            <div class="study-card" id="${cardId}">
-                <!-- Card header -->
-                <div class="flex items-start justify-between gap-3 p-5 pb-3">
-                    <div class="flex items-start gap-3 flex-1 min-w-0">
-                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)">
-                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
-                        </div>
-                        <div class="min-w-0">
-                            <div class="font-black text-slate-800 text-base leading-tight">${item.title}</div>
-                            <div class="flex items-center gap-2 mt-1 flex-wrap">
-                                ${item.category ? `<span class="study-category-pill bg-pink-100 text-pink-700">${item.category}</span>` : ''}
-                                ${multiPost ? `<span class="study-category-pill bg-slate-100 text-slate-600">${posts.length} slides</span>` : ''}
-                                <span class="text-[11px] text-slate-400 font-medium">${dateStr}</span>
-                            </div>
+            <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-md transition-shadow" id="sc-card-${item.id}">
+                <!-- Header -->
+                <div class="flex items-start gap-3 p-4 pb-3">
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)">
+                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-black text-slate-800 text-sm leading-snug">${item.title}</div>
+                        <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                            ${item.category ? `<span class="px-2 py-0.5 bg-pink-100 text-pink-700 text-[10px] font-black rounded-full">${item.category}</span>` : ''}
+                            <span class="px-2 py-0.5 text-[10px] font-black rounded-full text-white" style="background:linear-gradient(90deg,#e6683c,#cc2366)">Instagram</span>
+                            ${multiPost ? `<span class="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-black rounded-full">${posts.length} slides</span>` : ''}
+                            <span class="text-[10px] text-slate-400 font-medium">${dateStr}</span>
                         </div>
                     </div>
-                    <span class="flex-shrink-0 px-2 py-1 text-[10px] font-black rounded-lg uppercase text-white" style="background:linear-gradient(135deg,#e6683c,#cc2366)">Instagram</span>
                 </div>
 
                 ${multiPost ? `
-                <!-- Swipe hint banner -->
-                <div class="mx-5 mb-3 flex items-center gap-2 bg-violet-50 border border-violet-100 rounded-xl px-4 py-2.5">
-                    <svg class="w-4 h-4 text-violet-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"/></svg>
-                    <p class="text-[11px] font-bold text-violet-700">This post has <strong>${posts.length} slides</strong> — use the arrows or swipe to see all images. Don't miss any!</p>
+                <div class="mx-4 mb-2 flex items-center gap-2 bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-100 rounded-2xl px-3.5 py-2.5">
+                    <span class="text-sm">👆</span>
+                    <p class="text-[11px] font-bold text-violet-700">Swipe or tap arrows to see all <strong>${posts.length} slides</strong></p>
                 </div>` : ''}
 
-                <!-- Carousel container -->
-                <div class="mx-5 relative overflow-hidden rounded-2xl border border-slate-100 shadow-sm bg-slate-50">
-                    <div class="overflow-hidden">
-                        <div class="insta-carousel-track" id="sc-track-${item.id}">
+                <!-- Carousel -->
+                <div class="mx-4 relative rounded-2xl overflow-hidden bg-slate-50 border border-slate-100">
+                    <div style="overflow:hidden;">
+                        <div class="insta-carousel-track" id="sc-track-${item.id}" style="display:flex;transition:transform 0.35s cubic-bezier(.4,0,.2,1);">
                             ${slides}
                         </div>
                     </div>
-
-                ${multiPost ? `
-                <!-- Arrows (overlaid) -->
-                <div class="absolute inset-y-0 left-3 flex items-center" style="pointer-events:none;">
-                    <button class="carousel-btn" id="sc-prev-${item.id}" onclick="window.carouselPrev('${item.id}',${posts.length})" disabled title="Previous post" style="pointer-events:auto;">
+                    ${multiPost ? `
+                    <button class="carousel-btn" id="sc-prev-${item.id}" onclick="window.carouselPrev('${item.id}',${posts.length})" disabled
+                        style="position:absolute;left:10px;top:50%;transform:translateY(-50%);">
                         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 18l-6-6 6-6"/></svg>
                     </button>
-                </div>
-                <div class="absolute inset-y-0 right-3 flex items-center" style="pointer-events:none;">
-                    <button class="carousel-btn" id="sc-next-${item.id}" onclick="window.carouselNext('${item.id}',${posts.length})" title="Next post" style="pointer-events:auto;">
+                    <button class="carousel-btn" id="sc-next-${item.id}" onclick="window.carouselNext('${item.id}',${posts.length})"
+                        style="position:absolute;right:10px;top:50%;transform:translateY(-50%);">
                         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 18l6-6-6-6"/></svg>
-                    </button>
-                </div>` : ''}
+                    </button>` : ''}
                 </div>
 
                 ${multiPost ? `
-                <!-- Dots + counter -->
-                <div class="flex items-center justify-center gap-3 px-5 py-4">
+                <div class="flex items-center justify-between px-5 py-3">
                     <div class="flex items-center gap-1.5" id="sc-dots-${item.id}">${dots}</div>
-                    ${postCounter}
-                </div>` : '<div class="pb-2"></div>'}
+                    <span class="text-xs font-black text-slate-400" id="sc-counter-${item.id}">Post 1 of ${posts.length}</span>
+                </div>` : '<div class="pb-3"></div>'}
             </div>`;
         };
 
-        // ---- Carousel Controls ----
+        // ── Carousel Controls ─────────────────────────────────────────────────
         window.carouselGoTo = (itemId, idx) => {
-            const posts = (globalData.studyContent.find(x => x.id === itemId)?.posts || []);
-            const total = posts.length;
+            const total = (globalData.studyContent.find(x => x.id === itemId)?.posts || []).length;
             if (idx < 0 || idx >= total) return;
             carouselState[itemId] = idx;
-            _applyCarousel(itemId, idx, total);
+            const track = document.getElementById(`sc-track-${itemId}`);
+            if (track) track.style.transform = `translateX(-${idx * 100}%)`;
+            const dotsEl = document.getElementById(`sc-dots-${itemId}`);
+            if (dotsEl) dotsEl.querySelectorAll('.carousel-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+            const counter = document.getElementById(`sc-counter-${itemId}`);
+            if (counter) counter.innerText = `Post ${idx + 1} of ${total}`;
+            const prev = document.getElementById(`sc-prev-${itemId}`);
+            const next = document.getElementById(`sc-next-${itemId}`);
+            if (prev) prev.disabled = idx === 0;
+            if (next) next.disabled = idx === total - 1;
         };
 
         window.carouselNext = (itemId, total) => {
             const cur = carouselState[itemId] || 0;
             if (cur < total - 1) window.carouselGoTo(itemId, cur + 1);
         };
-
         window.carouselPrev = (itemId, total) => {
             const cur = carouselState[itemId] || 0;
             if (cur > 0) window.carouselGoTo(itemId, cur - 1);
         };
 
-        const _applyCarousel = (itemId, idx, total) => {
-            const track = document.getElementById(`sc-track-${itemId}`);
-            if (track) track.style.transform = `translateX(-${idx * 100}%)`;
-
-            // Update dots
-            const dotsEl = document.getElementById(`sc-dots-${itemId}`);
-            if (dotsEl) {
-                dotsEl.querySelectorAll('.carousel-dot').forEach((d, i) => {
-                    d.classList.toggle('active', i === idx);
-                });
-            }
-
-            // Update counter
-            const counter = document.getElementById(`sc-counter-${itemId}`);
-            if (counter) counter.innerText = `Post ${idx + 1} of ${total}`;
-
-            // Update arrow states
-            const prevBtn = document.getElementById(`sc-prev-${itemId}`);
-            const nextBtn = document.getElementById(`sc-next-${itemId}`);
-            if (prevBtn) prevBtn.disabled = idx === 0;
-            if (nextBtn) nextBtn.disabled = idx === total - 1;
-        };
-
-        // Touch/swipe support for carousels
         const initCarouselTouch = () => {
             document.querySelectorAll('[id^="sc-track-"]').forEach(track => {
                 const itemId = track.id.replace('sc-track-', '');
-                const item = globalData.studyContent.find(x => x.id === itemId);
-                const total = (item?.posts || []).length;
+                const total = (globalData.studyContent.find(x => x.id === itemId)?.posts || []).length;
                 if (total <= 1) return;
-
-                let startX = 0, isDragging = false;
-                track.addEventListener('touchstart', e => { startX = e.touches[0].clientX; isDragging = true; }, { passive: true });
+                let startX = 0;
+                track.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
                 track.addEventListener('touchend', e => {
-                    if (!isDragging) return;
-                    isDragging = false;
                     const diff = startX - e.changedTouches[0].clientX;
-                    if (Math.abs(diff) > 50) {
-                        diff > 0 ? window.carouselNext(itemId, total) : window.carouselPrev(itemId, total);
-                    }
+                    if (Math.abs(diff) > 50) diff > 0 ? window.carouselNext(itemId, total) : window.carouselPrev(itemId, total);
                 }, { passive: true });
             });
         };
 
-        // Trigger Instagram's embed.js to process iframes
         const initInstagramEmbeds = () => {
-            if (window.instgrm && window.instgrm.Embeds) {
-                window.instgrm.Embeds.process();
-            }
-            // Init touch on all carousels
-            setTimeout(initCarouselTouch, 300);
+            if (window.instgrm?.Embeds) window.instgrm.Embeds.process();
+            setTimeout(initCarouselTouch, 400);
         };
 
         window.onload = init;
