@@ -3023,25 +3023,84 @@
                 </div>`;
                 return;
             }
+
             const id = cert.certificateId || cert.id;
             const revoked = cert.status === 'revoked';
             const dateStr = cert.issueDate ? new Date(cert.issueDate).toLocaleDateString() : '—';
+
+            // ── Find winner placement across all seasons ──
+            const PLACE_MAP = [
+                { key: 'first',  medal: '🥇', label: '1st Place Winner', bg: 'bg-amber-50',   border: 'border-amber-300',  text: 'text-amber-800'  },
+                { key: 'second', medal: '🥈', label: '2nd Place Winner', bg: 'bg-slate-100',  border: 'border-slate-300',  text: 'text-slate-700'  },
+                { key: 'third',  medal: '🥉', label: '3rd Place Winner', bg: 'bg-orange-50',  border: 'border-orange-200', text: 'text-orange-800' },
+            ];
+            let winnerBadgeHTML = '';
+            (globalData.seasons || []).forEach(season => {
+                if (!season.winner) return;
+                PLACE_MAP.forEach(p => {
+                    const w = season.winner[p.key];
+                    if (w && w.id === cert.studentId) {
+                        winnerBadgeHTML += `
+                        <div class="flex items-center gap-3 px-4 py-3 ${p.bg} border ${p.border} rounded-2xl">
+                            <span class="text-3xl">${p.medal}</span>
+                            <div>
+                                <div class="font-black ${p.text} text-sm">${p.label}</div>
+                                <div class="text-xs font-bold text-slate-500">${season.name} &nbsp;·&nbsp; ${w.xp} XP</div>
+                            </div>
+                        </div>`;
+                    }
+                });
+            });
+
+            // ── Certificate file preview (protected, no download) ──
+            let certPreviewHTML = '';
+            if (cert.fileData) {
+                if (cert.fileType === 'pdf') {
+                    certPreviewHTML = `
+                    <div class="cert-protected-wrapper rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
+                        <iframe src="${cert.fileData}" class="w-full h-64 sm:h-80 rounded-2xl bg-white pointer-events-none"></iframe>
+                    </div>`;
+                } else {
+                    certPreviewHTML = `
+                    <div class="cert-protected-wrapper rounded-2xl overflow-hidden border border-slate-200 shadow-sm flex items-center justify-center bg-slate-50 p-2">
+                        <img src="${cert.fileData}" class="max-h-64 sm:max-h-80 w-full object-contain rounded-xl" ondragstart="return false;">
+                    </div>`;
+                }
+            }
+
             resultEl.innerHTML = `
-            <div class="p-4 ${revoked ? 'bg-rose-50 border-rose-200' : 'bg-emerald-50 border-emerald-200'} border rounded-2xl">
-                <div class="flex items-center gap-3 mb-3">
+            <div class="space-y-4">
+                <!-- Status header -->
+                <div class="flex items-center gap-3 p-4 ${revoked ? 'bg-rose-50 border-rose-200' : 'bg-emerald-50 border-emerald-200'} border rounded-2xl">
                     <span class="text-2xl">${revoked ? '⚠️' : '✅'}</span>
                     <div>
-                        <div class="font-black ${revoked ? 'text-rose-700' : 'text-emerald-700'}">${revoked ? 'Revoked Certificate' : 'Valid Certificate'}</div>
+                        <div class="font-black ${revoked ? 'text-rose-700' : 'text-emerald-700'} text-base">${revoked ? 'Revoked Certificate' : 'Valid Certificate'}</div>
                         <div class="text-xs ${revoked ? 'text-rose-500' : 'text-emerald-600'} font-bold">${revoked ? 'This certificate ID was revoked and is no longer valid.' : 'This certificate ID is genuine and on record.'}</div>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-3 text-xs bg-white/60 rounded-xl p-3">
-                    <div><span class="text-slate-400 font-bold block">Issued To</span><span class="font-black text-slate-800">${cert.studentName || 'Unknown'}</span></div>
-                    <div><span class="text-slate-400 font-bold block">Enrollment ID</span><span class="font-black text-slate-800">${cert.enrollmentId || '—'}</span></div>
-                    <div class="col-span-2"><span class="text-slate-400 font-bold block">Title</span><span class="font-black text-slate-800">${cert.title}</span></div>
-                    <div><span class="text-slate-400 font-bold block">Issue Date</span><span class="font-black text-slate-800">${dateStr}</span></div>
+
+                <!-- Details grid -->
+                <div class="grid grid-cols-2 gap-3 text-xs bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
+                    <div><span class="text-slate-400 font-bold block mb-0.5">Issued To</span><span class="font-black text-slate-800 text-sm">${cert.studentName || 'Unknown'}</span></div>
+                    <div><span class="text-slate-400 font-bold block mb-0.5">Enrollment ID</span><span class="font-black text-slate-800 text-sm">${cert.enrollmentId || '—'}</span></div>
+                    <div class="col-span-2"><span class="text-slate-400 font-bold block mb-0.5">Certificate Title</span><span class="font-black text-slate-800 text-sm">${cert.title}</span></div>
+                    <div><span class="text-slate-400 font-bold block mb-0.5">Issue Date</span><span class="font-black text-slate-800 text-sm">${dateStr}</span></div>
+                    <div><span class="text-slate-400 font-bold block mb-0.5">Certificate ID</span><span class="font-black text-slate-800 text-sm font-mono">${id}</span></div>
                 </div>
-                <button onclick="window.viewCertFile('${id}')" class="mt-3 w-full py-2.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition-colors text-sm">View Certificate File</button>
+
+                ${winnerBadgeHTML ? `
+                <!-- Winner placements -->
+                <div class="space-y-2">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">🏆 Season Achievements</p>
+                    ${winnerBadgeHTML}
+                </div>` : ''}
+
+                ${certPreviewHTML ? `
+                <!-- Certificate preview -->
+                <div>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">📄 Certificate Preview</p>
+                    ${certPreviewHTML}
+                </div>` : ''}
             </div>`;
         };
 
