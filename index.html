@@ -2746,33 +2746,137 @@
                 }).join('');
             } 
             else if (qData.type === 'fill') {
-                const currentVal = activeSession.userAnswers[idx] || '';
+                // Fill in the blanks with drag-and-drop
+                const userAnswers = activeSession.userAnswers[idx] || {};
+                const blanks = qData.blanks || []; // Array of blank IDs
+                const options = qData.options || []; // 2-3 options
+                const usedOptions = Object.values(userAnswers); // Track which options are used
+
+                // Parse question text to display with blank spots
+                let questionHTML = qData.q;
+                blanks.forEach((blank, i) => {
+                    const filledWith = userAnswers[blank] || '';
+                    const answerSpot = `<span class="inline-block mx-1 px-3 py-1 min-w-[120px] border-b-4 border-indigo-400 rounded-sm text-center font-bold text-indigo-700 bg-indigo-50 ${filledWith ? 'text-indigo-800' : 'text-slate-400'}" id="blank-${blank}" data-blank="${blank}">
+                        ${filledWith || '___'}
+                    </span>`;
+                    questionHTML = questionHTML.replace(`[${i}]`, answerSpot);
+                });
+
                 container.innerHTML = `
-                    <div class="space-y-4">
-                        <input type="text" value="${currentVal}" 
-                               oninput="window.pickAnswer(this.value, 'fill')" 
-                               onkeypress="if(event.key==='Enter') window.pickAnswer(this.value, 'fill')"
-                               onblur="saveProgress()" 
-                               class="w-full text-xl font-bold p-6 border-3 rounded-2xl outline-none transition-all bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 ${currentVal ? 'border-indigo-500' : 'border-slate-200'}" 
-                               placeholder="Type your answer and press Enter..." 
-                               autocomplete="off">
-                        <div class="text-center text-sm text-slate-400 font-medium">Press Enter or click Next to submit your answer</div>
+                    <div class="space-y-6">
+                        <!-- Question with blank spots -->
+                        <div class="p-6 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-2xl border-2 border-indigo-200 text-lg leading-relaxed">
+                            <p class="text-slate-800">${questionHTML}</p>
+                            <p class="text-xs text-slate-500 mt-3 font-medium">👆 Drag options below into the blanks above</p>
+                        </div>
+
+                        <!-- Draggable options -->
+                        <div class="flex flex-wrap gap-3 justify-center p-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-300">
+                            ${options.map((opt, i) => {
+                                const isUsed = usedOptions.includes(opt);
+                                return `
+                                <div draggable="true" 
+                                     id="option-${i}"
+                                     ondragstart="window.handleDragStart(event, '${opt.replace(/'/g, "\\'")}')"
+                                     ondragend="window.handleDragEnd(event)"
+                                     class="px-4 py-2 rounded-xl font-bold text-sm cursor-move transition-all ${isUsed ? 'bg-slate-300 text-slate-500 opacity-50 cursor-not-allowed' : 'bg-indigo-500 text-white shadow-md hover:shadow-lg hover:scale-105 active:scale-95'}">
+                                    ${opt}
+                                </div>`;
+                            }).join('')}
+                        </div>
+
+                        ${blanks.length > 1 ? `<div class="text-center text-xs text-slate-400 font-medium">Fill all blanks to continue</div>` : ''}
                     </div>
                 `;
-                setTimeout(() => document.querySelector('input[type="text"]')?.focus(), 100);
+
+                // Setup drop zones
+                setTimeout(() => {
+                    blanks.forEach(blank => {
+                        const el = document.getElementById(`blank-${blank}`);
+                        if (el) {
+                            el.addEventListener('dragover', window.handleDragOver);
+                            el.addEventListener('drop', (e) => window.handleDrop(e, blank));
+                            el.addEventListener('dragleave', window.handleDragLeave);
+                        }
+                    });
+                }, 100);
             }
             else if (qData.type === 'match') {
-                container.innerHTML = Object.keys(qData.pairs).map((k) => {
-                    const currentSelected = (activeSession.userAnswers[idx] || {})[k] || "";
-                    const options = `<option value="">Select match...</option>` + qData.shuffledValues.map(v => `<option value="${v}" ${currentSelected === v ? 'selected' : ''}>${v}</option>`).join('');
-                    return `
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50 p-5 rounded-2xl border border-slate-200 gap-3">
-                        <span class="font-bold text-slate-700 text-lg flex-1">${k}</span>
-                        <select onchange="window.updateMatchAnswer('${k}', this.value)" class="p-3 border-2 border-slate-200 rounded-xl bg-white font-bold text-slate-700 outline-none focus:border-indigo-500 w-full sm:w-1/2">
-                            ${options}
-                        </select>
-                    </div>`;
-                }).join('');
+                // Match the following with visual line drawing
+                const userAnswers = activeSession.userAnswers[idx] || {};
+                const pairs = qData.pairs || {}; // { leftItem: rightItem }
+                const leftItems = Object.keys(pairs);
+                const rightItems = qData.shuffledRight || Object.values(pairs).sort();
+                
+                const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
+                const selectedPairs = Object.keys(userAnswers).filter(k => userAnswers[k]);
+
+                container.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="text-xs font-bold text-slate-500 uppercase tracking-widest text-center mb-4">
+                            👉 Click items to connect them. Different colors = different pairs
+                        </div>
+                        
+                        <div style="position:relative;min-height:400px;display:grid;grid-template-columns:1fr auto 1fr;gap:40px;align-items:start;">
+                            <!-- Canvas for lines -->
+                            <canvas id="match-canvas-${idx}" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;"></canvas>
+
+                            <!-- Left column -->
+                            <div class="space-y-2 relative z-10">
+                                ${leftItems.map(item => {
+                                    const isSelected = window.selectedMatchFirst?.text === item && window.selectedMatchFirst?.col === 'left';
+                                    const connectedTo = userAnswers[item];
+                                    const pairColor = connectedTo ? colors[selectedPairs.indexOf(item) % colors.length] : '#e2e8f0';
+                                    return `
+                                    <button onclick="window.toggleMatchSelection('${item.replace(/'/g, "\\'")}',' left', '${pairColor}')"
+                                        class="w-full px-4 py-3 text-left font-bold rounded-xl transition-all border-2 whitespace-nowrap overflow-hidden text-ellipsis ${isSelected ? 'ring-2 ring-offset-2' : ''}"
+                                        style="background-color:${isSelected ? pairColor : (connectedTo ? pairColor + '20' : 'white')};border-color:${pairColor};color:${connectedTo ? '#000' : '#374151'};ring-color:${pairColor};">
+                                        ${item}
+                                    </button>`;
+                                }).join('')}
+                            </div>
+
+                            <!-- Center divider -->
+                            <div class="w-1 h-full bg-slate-200 rounded-full"></div>
+
+                            <!-- Right column -->
+                            <div class="space-y-2 relative z-10">
+                                ${rightItems.map(item => {
+                                    const leftKey = Object.keys(userAnswers).find(k => userAnswers[k] === item);
+                                    const isSelected = window.selectedMatchFirst?.text === item && window.selectedMatchFirst?.col === 'right';
+                                    const pairColor = leftKey ? colors[selectedPairs.indexOf(leftKey) % colors.length] : '#e2e8f0';
+                                    return `
+                                    <button onclick="window.toggleMatchSelection('${item.replace(/'/g, "\\'")}',' right', '${pairColor}')"
+                                        class="w-full px-4 py-3 text-left font-bold rounded-xl transition-all border-2 whitespace-nowrap overflow-hidden text-ellipsis ${isSelected ? 'ring-2 ring-offset-2' : ''}"
+                                        style="background-color:${isSelected ? pairColor : (leftKey ? pairColor + '20' : 'white')};border-color:${pairColor};color:${leftKey ? '#000' : '#374151'};ring-color:${pairColor};">
+                                        ${item}
+                                    </button>`;
+                                }).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Summary of connections -->
+                        ${selectedPairs.length > 0 ? `
+                        <div class="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                            <div class="text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Your Matches:</div>
+                            <div class="space-y-1">
+                                ${selectedPairs.map((left, i) => {
+                                    const right = userAnswers[left];
+                                    const color = colors[i % colors.length];
+                                    return `<div class="flex items-center gap-2 text-sm font-bold">
+                                        <div class="w-3 h-3 rounded-full" style="background-color:${color}"></div>
+                                        <span class="text-slate-700">${left}</span>
+                                        <span class="text-slate-400">→</span>
+                                        <span class="text-slate-700">${right}</span>
+                                    </div>`;
+                                }).join('')}
+                            </div>
+                        </div>` : ''}
+                    </div>
+                `;
+
+                // Draw lines after rendering
+                setTimeout(() => window.drawMatchLines(idx), 200);
             }
 
             document.getElementById('btn-prev').disabled = idx === 0;
@@ -2798,16 +2902,53 @@
                 // Re-render to show selection immediately
                 renderActiveQuestion();
             } else if (type === 'fill') {
-                const userAnswer = (val || '').toString().toLowerCase().trim();
-                const correctAns = qData.correct.toString().toLowerCase().trim();
-                isCorrect = userAnswer === correctAns;
-                correctAnswer = qData.correct;
+                // For fill-in-the-blanks with drag-drop, check all blanks
+                if (typeof val === 'object') {
+                    // Object of { blankId: answer }
+                    const blanks = qData.blanks || [];
+                    const correctAnswers = qData.correct || {};
+                    
+                    isCorrect = blanks.every(blank => {
+                        const userAns = (val[blank] || '').toString().toLowerCase().trim();
+                        const correctAns = (correctAnswers[blank] || '').toString().toLowerCase().trim();
+                        return userAns === correctAns;
+                    });
+                    correctAnswer = correctAnswers;
+                } else {
+                    // Legacy: simple text input
+                    const userAnswer = (val || '').toString().toLowerCase().trim();
+                    const correctAns = qData.correct.toString().toLowerCase().trim();
+                    isCorrect = userAnswer === correctAns;
+                    correctAnswer = qData.correct;
+                }
             }
 
             saveProgress();
 
             // Show feedback after a brief delay
             if (type === 'mcq' || (type === 'fill' && val)) {
+                setTimeout(() => {
+                    const feedbackEl = document.getElementById('answer-feedback');
+                    if (feedbackEl) {
+                        if (isCorrect) {
+                            feedbackEl.innerHTML = `
+                                <div class="flex items-center gap-2 text-green-700 font-black bg-green-50 border-2 border-green-300 px-4 py-3 rounded-xl">
+                                    <span class="text-2xl">✅</span>
+                                    <span>Correct! Well done!</span>
+                                </div>`;
+                            feedbackEl.classList.remove('hidden-view');
+                        } else {
+                            feedbackEl.innerHTML = `
+                                <div class="flex items-center gap-2 text-red-700 font-black bg-red-50 border-2 border-red-300 px-4 py-3 rounded-xl">
+                                    <span class="text-2xl">❌</span>
+                                    <span>Incorrect. ${qData.explanation ? `The answer is: <strong>${correctAnswer}</strong>` : ''}</span>
+                                </div>`;
+                            feedbackEl.classList.remove('hidden-view');
+                        }
+                    }
+                }, 300);
+            }
+        };
                 setTimeout(() => {
                     window.showAnswerFeedback(isCorrect, correctAnswer);
                 }, examState.isAnswered ? 0 : 300);
@@ -2853,7 +2994,20 @@
                 if (q.type === 'mcq') {
                     isCorrect = userAns === q.correct;
                 } else if (q.type === 'fill') {
-                    isCorrect = (userAns || '').toString().toLowerCase().trim() === q.correct.toString().toLowerCase().trim();
+                    // Handle both old (string) and new (object with blanks) formats
+                    if (typeof userAns === 'object' && userAns !== null) {
+                        // New format: { blankId: answer, ... }
+                        const blanks = q.blanks || [];
+                        const correctAnswers = q.correct || {};
+                        isCorrect = blanks.every(blank => {
+                            const userAnswer = (userAns[blank] || '').toString().toLowerCase().trim();
+                            const correctAnswer = (correctAnswers[blank] || '').toString().toLowerCase().trim();
+                            return userAnswer === correctAnswer;
+                        });
+                    } else {
+                        // Old format: simple string
+                        isCorrect = (userAns || '').toString().toLowerCase().trim() === q.correct.toString().toLowerCase().trim();
+                    }
                 } else if (q.type === 'match') {
                     isCorrect = true;
                     for(let k of Object.keys(q.pairs)) {
@@ -2862,7 +3016,7 @@
                 }
 
                 if(isCorrect) xpEarned += 10;
-                return { type: q.type, q: q.q, userAns, correctAns: (q.type === 'match' ? q.pairs : q.correct), isCorrect };
+                return { type: q.type, q: q.q, userAns, correctAns: (q.type === 'match' ? q.pairs : (typeof q.correct === 'object' ? q.correct : q.correct)), isCorrect };
             });
 
             const resultDoc = {
@@ -3990,6 +4144,197 @@
         const initInstagramEmbeds = () => {
             if (window.instgrm?.Embeds) window.instgrm.Embeds.process();
             setTimeout(initCarouselTouch, 400);
+        };
+
+        // ===== FILL IN THE BLANKS - DRAG & DROP =====
+        let draggedOption = null;
+
+        window.handleDragStart = (e, optionText) => {
+            draggedOption = optionText;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', optionText);
+            e.target.style.opacity = '0.5';
+        };
+
+        window.handleDragEnd = (e) => {
+            e.target.style.opacity = '1';
+            draggedOption = null;
+            document.querySelectorAll('[id^="blank-"]').forEach(el => {
+                el.style.backgroundColor = '#eef2ff';
+                el.style.borderColor = '#818cf8';
+            });
+        };
+
+        window.handleDragOver = (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            e.target.style.backgroundColor = '#dbeafe';
+            e.target.style.borderColor = '#3b82f6';
+            e.target.style.transform = 'scale(1.05)';
+            return false;
+        };
+
+        window.handleDragLeave = (e) => {
+            if (e.target.id && e.target.id.startsWith('blank-')) {
+                e.target.style.backgroundColor = '#eef2ff';
+                e.target.style.borderColor = '#818cf8';
+                e.target.style.transform = 'scale(1)';
+            }
+        };
+
+        window.handleDrop = (e, blankId) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const idx = activeSession.currentIndex;
+            const qData = activeSession.questions[idx];
+            const userAnswers = activeSession.userAnswers[idx] || {};
+            
+            if (draggedOption) {
+                // Update user answer for this blank
+                userAnswers[blankId] = draggedOption;
+                activeSession.userAnswers[idx] = userAnswers;
+                
+                // Visually update the blank
+                const blankEl = document.getElementById(`blank-${blankId}`);
+                if (blankEl) {
+                    blankEl.innerText = draggedOption;
+                    blankEl.style.color = '#1e3a8a';
+                    blankEl.style.backgroundColor = '#dbeafe';
+                }
+                
+                // Update option visibility - disable if all blanks are filled
+                const blanks = qData.blanks || [];
+                blanks.forEach((blank, i) => {
+                    const optionEl = document.getElementById(`option-${i}`);
+                    if (optionEl && userAnswers[blank]) {
+                        optionEl.style.opacity = '0.5';
+                        optionEl.style.cursor = 'not-allowed';
+                    }
+                });
+                
+                saveProgress();
+                
+                // Check if all blanks are filled
+                const allFilled = blanks.every(b => userAnswers[b]);
+                if (allFilled) {
+                    // Auto-check answer
+                    window.pickAnswer(userAnswers, 'fill');
+                }
+            }
+            
+            e.target.style.backgroundColor = '#eef2ff';
+            e.target.style.borderColor = '#818cf8';
+            e.target.style.transform = 'scale(1)';
+            return false;
+        };
+
+        // ===== MATCH THE FOLLOWING =====
+        window.selectedMatchFirst = null;
+
+        window.toggleMatchSelection = (text, col, color) => {
+            const idx = activeSession.currentIndex;
+            
+            // If this is the first selection
+            if (!window.selectedMatchFirst) {
+                window.selectedMatchFirst = { text, col, color };
+                return;
+            }
+            
+            // If clicking the same item, deselect
+            if (window.selectedMatchFirst.text === text && window.selectedMatchFirst.col === col) {
+                window.selectedMatchFirst = null;
+                renderActiveQuestion();
+                return;
+            }
+            
+            // If clicking from the same column, switch selection
+            if (window.selectedMatchFirst.col === col) {
+                window.selectedMatchFirst = { text, col, color };
+                return;
+            }
+            
+            // Valid pairing - save the answer
+            const userAnswers = activeSession.userAnswers[idx] || {};
+            const leftText = window.selectedMatchFirst.col === 'left' ? window.selectedMatchFirst.text : text;
+            const rightText = window.selectedMatchFirst.col === 'right' ? window.selectedMatchFirst.text : text;
+            
+            userAnswers[leftText] = rightText;
+            activeSession.userAnswers[idx] = userAnswers;
+            
+            window.selectedMatchFirst = null;
+            saveProgress();
+            renderActiveQuestion();
+            setTimeout(() => window.drawMatchLines(idx), 100);
+        };
+
+        window.drawMatchLines = (idx) => {
+            const canvas = document.getElementById(`match-canvas-${idx}`);
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            
+            const userAnswers = activeSession.userAnswers[idx] || {};
+            const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
+            const selectedPairs = Object.keys(userAnswers).filter(k => userAnswers[k]);
+            
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = 3;
+            
+            selectedPairs.forEach((leftItem, pairIdx) => {
+                const rightItem = userAnswers[leftItem];
+                
+                // Find left button
+                const leftBtns = document.querySelectorAll('button');
+                let leftBtn = null;
+                let rightBtn = null;
+                
+                for (let btn of leftBtns) {
+                    if (btn.innerText.includes(leftItem)) {
+                        const parent = btn.parentElement;
+                        if (parent && parent.style.marginRight !== undefined) leftBtn = btn;
+                    }
+                }
+                
+                for (let btn of leftBtns) {
+                    if (btn.innerText.includes(rightItem)) {
+                        const parent = btn.parentElement;
+                        if (parent && parent.style.marginLeft !== undefined) rightBtn = btn;
+                    }
+                }
+                
+                if (!leftBtn || !rightBtn) {
+                    // Try simpler matching
+                    for (let btn of leftBtns) {
+                        if (btn.innerText.trim() === leftItem.trim()) leftBtn = btn;
+                        if (btn.innerText.trim() === rightItem.trim()) rightBtn = btn;
+                    }
+                }
+                
+                if (leftBtn && rightBtn) {
+                    const leftRect = leftBtn.getBoundingClientRect();
+                    const rightRect = rightBtn.getBoundingClientRect();
+                    const parentRect = canvas.parentElement.getBoundingClientRect();
+                    
+                    const x1 = leftRect.right - parentRect.left;
+                    const y1 = leftRect.top - parentRect.top + leftRect.height / 2;
+                    const x2 = rightRect.left - parentRect.left;
+                    const y2 = rightRect.top - parentRect.top + rightRect.height / 2;
+                    
+                    // Draw line
+                    ctx.strokeStyle = colors[pairIdx % colors.length];
+                    ctx.globalAlpha = 0.7;
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.bezierCurveTo(x1 + (x2 - x1) * 0.3, y1, x2 - (x2 - x1) * 0.3, y2, x2, y2);
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+                }
+            });
         };
 
         window.onload = init;
