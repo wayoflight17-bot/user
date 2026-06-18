@@ -577,15 +577,11 @@
         <!-- EXAM VIEW - DUOLINGO STYLE -->
         <div id="view-exam" class="hidden-view fade-in bg-gradient-to-b from-slate-50 to-white min-h-screen pb-20">
             
-            <!-- TOP BAR: Lives, XP, Streak, Timer -->
+            <!-- TOP BAR: XP, Streak, Timer -->
             <div class="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
                 <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between sm:py-4">
-                    <!-- Left: Lives & Streak -->
+                    <!-- Left: Streak -->
                     <div class="flex items-center gap-4">
-                        <!-- Hearts/Lives -->
-                        <div class="flex items-center gap-2">
-                            <div id="exam-lives-display" class="flex gap-1"></div>
-                        </div>
                         <!-- Streak -->
                         <div id="exam-streak" class="hidden flex items-center gap-1.5 px-3 py-1.5 bg-orange-100 rounded-full">
                             <span class="text-lg">🔥</span>
@@ -1293,8 +1289,6 @@
         let globalData = { users: {}, results: [], quizzes: [], config: {}, seasons: [], certificates: [], studyContent: [] };
         let activeSession = null;
         let examState = {
-            hearts: 2,
-            maxHearts: 2,
             totalXP: 0,
             streak: 0,
             answered: 0,
@@ -2510,14 +2504,6 @@
 
         // ===== EXAM STATE & DISPLAY =====
         window.updateExamDisplay = () => {
-            // Update hearts
-            const livesEl = document.getElementById('exam-lives-display');
-            if (livesEl) {
-                livesEl.innerHTML = Array.from({length: examState.maxHearts}, (_, i) => {
-                    const filled = i < examState.hearts;
-                    return `<span style="font-size:24px;cursor:default;opacity:${filled ? 1 : 0.4};transition:all 0.3s">${filled ? '❤️' : '🤍'}</span>`;
-                }).join('');
-            }
             // Update XP
             const xpEl = document.getElementById('exam-xp-display');
             if (xpEl) xpEl.innerText = examState.totalXP;
@@ -2581,7 +2567,6 @@
             const correctDisplay = document.getElementById('correct-answer-display');
 
             if (isCorrect) {
-                examState.hearts = Math.min(examState.hearts + 1, examState.maxHearts);
                 examState.totalXP += 10;
                 examState.streak += 1;
                 examState.correct += 1;
@@ -2593,7 +2578,6 @@
 
                 confetti();
             } else {
-                examState.hearts = Math.max(0, examState.hearts - 1);
                 examState.streak = 0;
 
                 feedbackEl.className = 'mt-8 p-6 rounded-2xl text-center font-bold text-lg bg-gradient-to-r from-red-100 to-rose-100 border-2 border-red-400 shake';
@@ -2616,10 +2600,6 @@
             await new Promise(r => setTimeout(r, 2000));
             
             examState.answered += 1;
-            if (examState.hearts === 0) {
-                window.submitExam();
-                return;
-            }
 
             window.navQuestion(1);
         };
@@ -2633,8 +2613,6 @@
 
             // Reset exam state
             examState = {
-                hearts: 2,
-                maxHearts: 2,
                 totalXP: 0,
                 streak: 0,
                 answered: 0,
@@ -2746,137 +2724,133 @@
                 }).join('');
             } 
             else if (qData.type === 'fill') {
-                // Fill in the blanks with drag-and-drop
+                // Fill in the blanks with drag-and-drop (Duolingo style)
                 const userAnswers = activeSession.userAnswers[idx] || {};
-                const blanks = qData.blanks || []; // Array of blank IDs
-                const options = qData.options || []; // 2-3 options
-                const usedOptions = Object.values(userAnswers); // Track which options are used
-
-                // Parse question text to display with blank spots
-                let questionHTML = qData.q;
-                blanks.forEach((blank, i) => {
-                    const filledWith = userAnswers[blank] || '';
-                    const answerSpot = `<span class="inline-block mx-1 px-3 py-1 min-w-[120px] border-b-4 border-indigo-400 rounded-sm text-center font-bold text-indigo-700 bg-indigo-50 ${filledWith ? 'text-indigo-800' : 'text-slate-400'}" id="blank-${blank}" data-blank="${blank}">
-                        ${filledWith || '___'}
+                const options = qData.options || []; // 2-3 draggable options
+                const blanks = qData.blanks || []; // Array of blank positions
+                
+                // Build the question with draggable blanks
+                let questionDisplay = qData.q;
+                blanks.forEach((blankId, idx) => {
+                    const filledWith = userAnswers[blankId] || null;
+                    const blankSpan = `<span class="drag-blank" id="blank-${blankId}" data-blank-id="${blankId}" style="display:inline-block;min-width:100px;padding:6px 12px;margin:0 4px;border:2px dashed #818cf8;border-radius:8px;background:#eef2ff;text-align:center;font-weight:bold;color:#1e40af;cursor:pointer;">
+                        ${filledWith || '____'}
                     </span>`;
-                    questionHTML = questionHTML.replace(`[${i}]`, answerSpot);
+                    questionDisplay = questionDisplay.replace(`[${idx}]`, blankSpan);
                 });
 
                 container.innerHTML = `
                     <div class="space-y-6">
-                        <!-- Question with blank spots -->
-                        <div class="p-6 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-2xl border-2 border-indigo-200 text-lg leading-relaxed">
-                            <p class="text-slate-800">${questionHTML}</p>
-                            <p class="text-xs text-slate-500 mt-3 font-medium">👆 Drag options below into the blanks above</p>
+                        <!-- Question display -->
+                        <div class="p-6 bg-blue-50 border-2 border-blue-200 rounded-2xl text-lg leading-relaxed">
+                            <p class="text-slate-800" style="line-height:2;">${questionDisplay}</p>
                         </div>
 
                         <!-- Draggable options -->
-                        <div class="flex flex-wrap gap-3 justify-center p-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-300">
+                        <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:16px;background:#f1f5f9;border-radius:16px;border:2px dashed #cbd5e1;">
                             ${options.map((opt, i) => {
-                                const isUsed = usedOptions.includes(opt);
+                                const isUsed = Object.values(userAnswers).includes(opt);
                                 return `
-                                <div draggable="true" 
+                                <div draggable="${!isUsed}" 
                                      id="option-${i}"
-                                     ondragstart="window.handleDragStart(event, '${opt.replace(/'/g, "\\'")}')"
-                                     ondragend="window.handleDragEnd(event)"
-                                     class="px-4 py-2 rounded-xl font-bold text-sm cursor-move transition-all ${isUsed ? 'bg-slate-300 text-slate-500 opacity-50 cursor-not-allowed' : 'bg-indigo-500 text-white shadow-md hover:shadow-lg hover:scale-105 active:scale-95'}">
+                                     data-option="${opt}"
+                                     ondragstart="if(!event.target.style.opacity.includes('0.4')) window.fillDragStart(event)"
+                                     ondragend="window.fillDragEnd(event)"
+                                     style="padding:8px 16px;background:${isUsed ? '#d1d5db' : '#3b82f6'};color:white;border-radius:12px;font-weight:bold;font-size:14px;cursor:${isUsed ? 'default' : 'move'};opacity:${isUsed ? '0.4' : '1'};transition:all 0.2s;user-select:none;">
                                     ${opt}
                                 </div>`;
                             }).join('')}
                         </div>
 
-                        ${blanks.length > 1 ? `<div class="text-center text-xs text-slate-400 font-medium">Fill all blanks to continue</div>` : ''}
+                        <div style="text-align:center;font-size:12px;color:#64748b;font-weight:500;">Drag options into the blanks</div>
                     </div>
                 `;
 
-                // Setup drop zones
+                // Add drop listeners to blanks
                 setTimeout(() => {
-                    blanks.forEach(blank => {
-                        const el = document.getElementById(`blank-${blank}`);
-                        if (el) {
-                            el.addEventListener('dragover', window.handleDragOver);
-                            el.addEventListener('drop', (e) => window.handleDrop(e, blank));
-                            el.addEventListener('dragleave', window.handleDragLeave);
-                        }
+                    document.querySelectorAll('.drag-blank').forEach(el => {
+                        el.addEventListener('dragover', window.fillDragOver);
+                        el.addEventListener('drop', window.fillDrop);
+                        el.addEventListener('dragleave', window.fillDragLeave);
                     });
                 }, 100);
             }
             else if (qData.type === 'match') {
-                // Match the following with visual line drawing
+                // Match the following - Duolingo style (click to pair)
                 const userAnswers = activeSession.userAnswers[idx] || {};
-                const pairs = qData.pairs || {}; // { leftItem: rightItem }
+                const pairs = qData.pairs || {}; // { left: right }
                 const leftItems = Object.keys(pairs);
                 const rightItems = qData.shuffledRight || Object.values(pairs).sort();
                 
-                const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
-                const selectedPairs = Object.keys(userAnswers).filter(k => userAnswers[k]);
+                const colors = [
+                    { bg: '#FEE2E2', text: '#B91C1C', border: '#DC2626' }, // red
+                    { bg: '#DBEAFE', text: '#1E40AF', border: '#2563EB' }, // blue
+                    { bg: '#DCFCE7', text: '#15803D', border: '#22C55E' }, // green
+                    { bg: '#FEF3C7', text: '#B45309', border: '#F59E0B' }, // amber
+                    { bg: '#E9D5FF', text: '#6B21A8', border: '#A855F7' }, // purple
+                    { bg: '#CFFAFE', text: '#0E7490', border: '#06B6D4' }, // cyan
+                    { bg: '#FCE7F3', text: '#9D174D', border: '#EC4899' }, // pink
+                    { bg: '#F3E8FF', text: '#5B21B6', border: '#9333EA' }  // violet
+                ];
 
                 container.innerHTML = `
-                    <div class="space-y-4">
-                        <div class="text-xs font-bold text-slate-500 uppercase tracking-widest text-center mb-4">
-                            👉 Click items to connect them. Different colors = different pairs
-                        </div>
-                        
-                        <div style="position:relative;min-height:400px;display:grid;grid-template-columns:1fr auto 1fr;gap:40px;align-items:start;">
-                            <!-- Canvas for lines -->
-                            <canvas id="match-canvas-${idx}" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;"></canvas>
-
-                            <!-- Left column -->
-                            <div class="space-y-2 relative z-10">
-                                ${leftItems.map(item => {
-                                    const isSelected = window.selectedMatchFirst?.text === item && window.selectedMatchFirst?.col === 'left';
-                                    const connectedTo = userAnswers[item];
-                                    const pairColor = connectedTo ? colors[selectedPairs.indexOf(item) % colors.length] : '#e2e8f0';
-                                    return `
-                                    <button onclick="window.toggleMatchSelection('${item.replace(/'/g, "\\'")}',' left', '${pairColor}')"
-                                        class="w-full px-4 py-3 text-left font-bold rounded-xl transition-all border-2 whitespace-nowrap overflow-hidden text-ellipsis ${isSelected ? 'ring-2 ring-offset-2' : ''}"
-                                        style="background-color:${isSelected ? pairColor : (connectedTo ? pairColor + '20' : 'white')};border-color:${pairColor};color:${connectedTo ? '#000' : '#374151'};ring-color:${pairColor};">
-                                        ${item}
-                                    </button>`;
-                                }).join('')}
-                            </div>
-
-                            <!-- Center divider -->
-                            <div class="w-1 h-full bg-slate-200 rounded-full"></div>
-
-                            <!-- Right column -->
-                            <div class="space-y-2 relative z-10">
-                                ${rightItems.map(item => {
-                                    const leftKey = Object.keys(userAnswers).find(k => userAnswers[k] === item);
-                                    const isSelected = window.selectedMatchFirst?.text === item && window.selectedMatchFirst?.col === 'right';
-                                    const pairColor = leftKey ? colors[selectedPairs.indexOf(leftKey) % colors.length] : '#e2e8f0';
-                                    return `
-                                    <button onclick="window.toggleMatchSelection('${item.replace(/'/g, "\\'")}',' right', '${pairColor}')"
-                                        class="w-full px-4 py-3 text-left font-bold rounded-xl transition-all border-2 whitespace-nowrap overflow-hidden text-ellipsis ${isSelected ? 'ring-2 ring-offset-2' : ''}"
-                                        style="background-color:${isSelected ? pairColor : (leftKey ? pairColor + '20' : 'white')};border-color:${pairColor};color:${leftKey ? '#000' : '#374151'};ring-color:${pairColor};">
-                                        ${item}
-                                    </button>`;
-                                }).join('')}
-                            </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;margin:20px 0;">
+                        <!-- Left column -->
+                        <div style="display:flex;flex-direction:column;gap:10px;">
+                            ${leftItems.map((item, idx) => {
+                                const paired = userAnswers[item];
+                                const color = paired ? colors[idx % colors.length] : null;
+                                return `
+                                <button onclick="window.matchSelectLeft('${item.replace(/'/g, "\\'")}')"
+                                    id="left-${idx}"
+                                    class="match-item left"
+                                    data-item="${item}"
+                                    style="padding:12px 16px;text-align:left;border:2px solid ${color ? color.border : '#cbd5e1'};background:${color ? color.bg : '#f8fafc'};color:${color ? color.text : '#374151'};border-radius:12px;font-weight:bold;font-size:14px;cursor:pointer;transition:all 0.2s;">
+                                    ${item}
+                                </button>`;
+                            }).join('')}
                         </div>
 
-                        <!-- Summary of connections -->
-                        ${selectedPairs.length > 0 ? `
-                        <div class="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                            <div class="text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Your Matches:</div>
-                            <div class="space-y-1">
-                                ${selectedPairs.map((left, i) => {
-                                    const right = userAnswers[left];
-                                    const color = colors[i % colors.length];
-                                    return `<div class="flex items-center gap-2 text-sm font-bold">
-                                        <div class="w-3 h-3 rounded-full" style="background-color:${color}"></div>
-                                        <span class="text-slate-700">${left}</span>
-                                        <span class="text-slate-400">→</span>
-                                        <span class="text-slate-700">${right}</span>
-                                    </div>`;
-                                }).join('')}
-                            </div>
-                        </div>` : ''}
+                        <!-- Right column -->
+                        <div style="display:flex;flex-direction:column;gap:10px;">
+                            ${rightItems.map((item, idx) => {
+                                const leftKey = Object.keys(userAnswers).find(k => userAnswers[k] === item);
+                                const color = leftKey ? colors[leftItems.indexOf(leftKey) % colors.length] : null;
+                                return `
+                                <button onclick="window.matchSelectRight('${item.replace(/'/g, "\\'")}')"
+                                    id="right-${idx}"
+                                    class="match-item right"
+                                    data-item="${item}"
+                                    style="padding:12px 16px;text-align:left;border:2px solid ${color ? color.border : '#cbd5e1'};background:${color ? color.bg : '#f8fafc'};color:${color ? color.text : '#374151'};border-radius:12px;font-weight:bold;font-size:14px;cursor:pointer;transition:all 0.2s;">
+                                    ${item}
+                                </button>`;
+                            }).join('')}
+                        </div>
                     </div>
+
+                    <!-- Connection lines canvas -->
+                    <canvas id="match-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
+
+                    <!-- Pairs summary -->
+                    ${Object.keys(userAnswers).length > 0 ? `
+                    <div style="margin-top:20px;padding:12px;background:#f0fdf4;border-radius:12px;border:1px solid #bbf7d0;">
+                        <div style="font-size:12px;font-weight:bold;color:#166534;margin-bottom:8px;">✓ Pairs Created:</div>
+                        ${Object.keys(userAnswers).map((left, i) => {
+                            const color = colors[i % colors.length];
+                            return `
+                            <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;margin:4px 0;">
+                                <span style="width:8px;height:8px;border-radius:50%;background:${color.border};"></span>
+                                <span style="font-weight:bold;color:${color.text};">${left}</span>
+                                <span style="color:#94a3b8;">→</span>
+                                <span style="font-weight:bold;color:${color.text};">${userAnswers[left]}</span>
+                                <button onclick="window.matchRemovePair('${left.replace(/'/g, "\\'")}')" style="margin-left:auto;color:#ef4444;border:none;background:none;cursor:pointer;font-weight:bold;font-size:16px;">✕</button>
+                            </div>`;
+                        }).join('')}
+                    </div>` : ''}
                 `;
 
-                // Draw lines after rendering
-                setTimeout(() => window.drawMatchLines(idx), 200);
+                // Draw connection lines
+                setTimeout(() => window.matchDrawLines(idx, pairs, userAnswers, colors), 200);
             }
 
             document.getElementById('btn-prev').disabled = idx === 0;
@@ -4141,194 +4115,216 @@
             setTimeout(initCarouselTouch, 400);
         };
 
-        // ===== FILL IN THE BLANKS - DRAG & DROP =====
-        let draggedOption = null;
+        // ===== FILL IN THE BLANKS - DRAG DROP (Duolingo Style) =====
+        let draggedFromId = null;
 
-        window.handleDragStart = (e, optionText) => {
-            draggedOption = optionText;
+        window.fillDragStart = (e) => {
+            draggedFromId = e.target.getAttribute('data-option');
             e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', optionText);
-            e.target.style.opacity = '0.5';
+            e.target.style.opacity = '0.6';
+            e.target.style.transform = 'scale(0.95)';
         };
 
-        window.handleDragEnd = (e) => {
+        window.fillDragEnd = (e) => {
             e.target.style.opacity = '1';
-            draggedOption = null;
-            document.querySelectorAll('[id^="blank-"]').forEach(el => {
-                el.style.backgroundColor = '#eef2ff';
-                el.style.borderColor = '#818cf8';
-            });
+            e.target.style.transform = 'scale(1)';
         };
 
-        window.handleDragOver = (e) => {
+        window.fillDragOver = (e) => {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
             e.target.style.backgroundColor = '#dbeafe';
-            e.target.style.borderColor = '#3b82f6';
-            e.target.style.transform = 'scale(1.05)';
-            return false;
+            e.target.style.borderColor = '#2563eb';
+            e.target.style.transform = 'scale(1.1)';
         };
 
-        window.handleDragLeave = (e) => {
-            if (e.target.id && e.target.id.startsWith('blank-')) {
+        window.fillDragLeave = (e) => {
+            if (e.target.classList.contains('drag-blank')) {
                 e.target.style.backgroundColor = '#eef2ff';
                 e.target.style.borderColor = '#818cf8';
                 e.target.style.transform = 'scale(1)';
             }
         };
 
-        window.handleDrop = (e, blankId) => {
+        window.fillDrop = (e) => {
             e.preventDefault();
             e.stopPropagation();
             
+            if (!draggedFromId) return;
+            
+            const blankEl = e.target;
+            const blankId = blankEl.getAttribute('data-blank-id');
             const idx = activeSession.currentIndex;
-            const qData = activeSession.questions[idx];
+            
+            // Update answer
             const userAnswers = activeSession.userAnswers[idx] || {};
+            userAnswers[blankId] = draggedFromId;
+            activeSession.userAnswers[idx] = userAnswers;
             
-            if (draggedOption) {
-                // Update user answer for this blank
-                userAnswers[blankId] = draggedOption;
-                activeSession.userAnswers[idx] = userAnswers;
-                
-                // Visually update the blank
-                const blankEl = document.getElementById(`blank-${blankId}`);
-                if (blankEl) {
-                    blankEl.innerText = draggedOption;
-                    blankEl.style.color = '#1e3a8a';
-                    blankEl.style.backgroundColor = '#dbeafe';
-                }
-                
-                // Update option visibility - disable if all blanks are filled
-                const blanks = qData.blanks || [];
-                blanks.forEach((blank, i) => {
-                    const optionEl = document.getElementById(`option-${i}`);
-                    if (optionEl && userAnswers[blank]) {
-                        optionEl.style.opacity = '0.5';
-                        optionEl.style.cursor = 'not-allowed';
-                    }
-                });
-                
-                saveProgress();
-                
-                // Check if all blanks are filled
-                const allFilled = blanks.every(b => userAnswers[b]);
-                if (allFilled) {
-                    // Auto-check answer
-                    window.pickAnswer(userAnswers, 'fill');
-                }
+            // Visual update
+            blankEl.innerText = draggedFromId;
+            blankEl.style.backgroundColor = '#dbeafe';
+            blankEl.style.borderColor = '#2563eb';
+            blankEl.style.color = '#1e40af';
+            
+            saveProgress();
+            
+            // Re-render to update option availability
+            renderActiveQuestion();
+            
+            // Check if all blanks filled
+            const qData = activeSession.questions[idx];
+            const blanks = qData.blanks || [];
+            const allFilled = blanks.every(b => userAnswers[b]);
+            
+            if (allFilled) {
+                // Auto-validate
+                setTimeout(() => window.pickAnswer(userAnswers, 'fill'), 500);
             }
-            
-            e.target.style.backgroundColor = '#eef2ff';
-            e.target.style.borderColor = '#818cf8';
-            e.target.style.transform = 'scale(1)';
-            return false;
         };
 
-        // ===== MATCH THE FOLLOWING =====
-        window.selectedMatchFirst = null;
+        // ===== MATCH THE FOLLOWING (Duolingo Style - Click to Pair) =====
+        let matchFirstSelected = null;
 
-        window.toggleMatchSelection = (text, col, color) => {
-            const idx = activeSession.currentIndex;
-            
-            // If this is the first selection
-            if (!window.selectedMatchFirst) {
-                window.selectedMatchFirst = { text, col, color };
-                return;
-            }
-            
-            // If clicking the same item, deselect
-            if (window.selectedMatchFirst.text === text && window.selectedMatchFirst.col === col) {
-                window.selectedMatchFirst = null;
+        window.matchSelectLeft = (item) => {
+            if (matchFirstSelected && matchFirstSelected.item === item && matchFirstSelected.side === 'left') {
+                // Deselect if clicking same item
+                matchFirstSelected = null;
                 renderActiveQuestion();
                 return;
             }
             
-            // If clicking from the same column, switch selection
-            if (window.selectedMatchFirst.col === col) {
-                window.selectedMatchFirst = { text, col, color };
+            if (matchFirstSelected && matchFirstSelected.side === 'left') {
+                // Replace selection if clicking different left item
+                matchFirstSelected = { item, side: 'left' };
+                renderActiveQuestion();
                 return;
             }
             
-            // Valid pairing - save the answer
-            const userAnswers = activeSession.userAnswers[idx] || {};
-            const leftText = window.selectedMatchFirst.col === 'left' ? window.selectedMatchFirst.text : text;
-            const rightText = window.selectedMatchFirst.col === 'right' ? window.selectedMatchFirst.text : text;
+            if (matchFirstSelected && matchFirstSelected.side === 'right') {
+                // Create pair
+                const idx = activeSession.currentIndex;
+                const userAnswers = activeSession.userAnswers[idx] || {};
+                userAnswers[item] = matchFirstSelected.item;
+                activeSession.userAnswers[idx] = userAnswers;
+                
+                matchFirstSelected = null;
+                saveProgress();
+                renderActiveQuestion();
+                setTimeout(() => window.matchDrawLines(idx), 200);
+                return;
+            }
             
-            userAnswers[leftText] = rightText;
-            activeSession.userAnswers[idx] = userAnswers;
-            
-            window.selectedMatchFirst = null;
-            saveProgress();
+            // First selection from left
+            matchFirstSelected = { item, side: 'left' };
             renderActiveQuestion();
-            setTimeout(() => window.drawMatchLines(idx), 100);
         };
 
-        window.drawMatchLines = (idx) => {
-            const canvas = document.getElementById(`match-canvas-${idx}`);
+        window.matchSelectRight = (item) => {
+            if (matchFirstSelected && matchFirstSelected.item === item && matchFirstSelected.side === 'right') {
+                // Deselect
+                matchFirstSelected = null;
+                renderActiveQuestion();
+                return;
+            }
+            
+            if (matchFirstSelected && matchFirstSelected.side === 'right') {
+                // Replace
+                matchFirstSelected = { item, side: 'right' };
+                renderActiveQuestion();
+                return;
+            }
+            
+            if (matchFirstSelected && matchFirstSelected.side === 'left') {
+                // Create pair
+                const idx = activeSession.currentIndex;
+                const userAnswers = activeSession.userAnswers[idx] || {};
+                userAnswers[matchFirstSelected.item] = item;
+                activeSession.userAnswers[idx] = userAnswers;
+                
+                matchFirstSelected = null;
+                saveProgress();
+                renderActiveQuestion();
+                setTimeout(() => window.matchDrawLines(idx), 200);
+                return;
+            }
+            
+            // First selection from right
+            matchFirstSelected = { item, side: 'right' };
+            renderActiveQuestion();
+        };
+
+        window.matchRemovePair = (leftItem) => {
+            const idx = activeSession.currentIndex;
+            const userAnswers = activeSession.userAnswers[idx] || {};
+            delete userAnswers[leftItem];
+            activeSession.userAnswers[idx] = userAnswers;
+            saveProgress();
+            renderActiveQuestion();
+            setTimeout(() => window.matchDrawLines(idx), 200);
+        };
+
+        window.matchDrawLines = (idx, pairs, userAnswers, colors) => {
+            const canvas = document.getElementById('match-canvas');
             if (!canvas) return;
             
-            const ctx = canvas.getContext('2d');
-            const rect = canvas.parentElement.getBoundingClientRect();
+            const container = canvas.parentElement;
+            if (!container) return;
+            
+            const rect = container.getBoundingClientRect();
             canvas.width = rect.width;
             canvas.height = rect.height;
             
-            const userAnswers = activeSession.userAnswers[idx] || {};
-            const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
-            const selectedPairs = Object.keys(userAnswers).filter(k => userAnswers[k]);
+            const qData = activeSession.questions[idx];
+            const pairs_ = pairs || qData.pairs || {};
+            const userAns = userAnswers || activeSession.userAnswers[idx] || {};
+            const colors_ = colors || [
+                { bg: '#FEE2E2', text: '#B91C1C', border: '#DC2626' },
+                { bg: '#DBEAFE', text: '#1E40AF', border: '#2563EB' },
+                { bg: '#DCFCE7', text: '#15803D', border: '#22C55E' },
+                { bg: '#FEF3C7', text: '#B45309', border: '#F59E0B' },
+                { bg: '#E9D5FF', text: '#6B21A8', border: '#A855F7' }
+            ];
             
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 2.5;
             
-            selectedPairs.forEach((leftItem, pairIdx) => {
-                const rightItem = userAnswers[leftItem];
+            const leftItems = Object.keys(pairs_);
+            let pairIdx = 0;
+            
+            leftItems.forEach(leftItem => {
+                const rightItem = userAns[leftItem];
+                if (!rightItem) return;
                 
-                // Find left button
-                const leftBtns = document.querySelectorAll('button');
-                let leftBtn = null;
-                let rightBtn = null;
+                // Find elements
+                const leftBtn = document.querySelector(`[data-item="${leftItem}"].left`);
+                const rightBtn = document.querySelector(`[data-item="${rightItem}"].right`);
                 
-                for (let btn of leftBtns) {
-                    if (btn.innerText.includes(leftItem)) {
-                        const parent = btn.parentElement;
-                        if (parent && parent.style.marginRight !== undefined) leftBtn = btn;
-                    }
-                }
+                if (!leftBtn || !rightBtn) return;
                 
-                for (let btn of leftBtns) {
-                    if (btn.innerText.includes(rightItem)) {
-                        const parent = btn.parentElement;
-                        if (parent && parent.style.marginLeft !== undefined) rightBtn = btn;
-                    }
-                }
+                const color = colors_[pairIdx % colors_.length];
                 
-                if (!leftBtn || !rightBtn) {
-                    // Try simpler matching
-                    for (let btn of leftBtns) {
-                        if (btn.innerText.trim() === leftItem.trim()) leftBtn = btn;
-                        if (btn.innerText.trim() === rightItem.trim()) rightBtn = btn;
-                    }
-                }
+                // Get positions relative to canvas
+                const leftRect = leftBtn.getBoundingClientRect();
+                const rightRect = rightBtn.getBoundingClientRect();
+                const canvasRect = canvas.getBoundingClientRect();
                 
-                if (leftBtn && rightBtn) {
-                    const leftRect = leftBtn.getBoundingClientRect();
-                    const rightRect = rightBtn.getBoundingClientRect();
-                    const parentRect = canvas.parentElement.getBoundingClientRect();
-                    
-                    const x1 = leftRect.right - parentRect.left;
-                    const y1 = leftRect.top - parentRect.top + leftRect.height / 2;
-                    const x2 = rightRect.left - parentRect.left;
-                    const y2 = rightRect.top - parentRect.top + rightRect.height / 2;
-                    
-                    // Draw line
-                    ctx.strokeStyle = colors[pairIdx % colors.length];
-                    ctx.globalAlpha = 0.7;
-                    ctx.beginPath();
-                    ctx.moveTo(x1, y1);
-                    ctx.bezierCurveTo(x1 + (x2 - x1) * 0.3, y1, x2 - (x2 - x1) * 0.3, y2, x2, y2);
-                    ctx.stroke();
-                    ctx.globalAlpha = 1;
-                }
+                const x1 = leftRect.right - canvasRect.left;
+                const y1 = leftRect.top - canvasRect.top + leftRect.height / 2;
+                const x2 = rightRect.left - canvasRect.left;
+                const y2 = rightRect.top - canvasRect.top + rightRect.height / 2;
+                
+                // Draw curved line
+                ctx.strokeStyle = color.border;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                const midX = (x1 + x2) / 2;
+                ctx.bezierCurveTo(midX, y1, midX, y2, x2, y2);
+                ctx.stroke();
+                
+                pairIdx++;
             });
         };
 
