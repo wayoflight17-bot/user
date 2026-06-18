@@ -2949,11 +2949,6 @@
                 }, 300);
             }
         };
-                setTimeout(() => {
-                    window.showAnswerFeedback(isCorrect, correctAnswer);
-                }, examState.isAnswered ? 0 : 300);
-            }
-        };
 
         window.updateMatchAnswer = (key, val) => {
             if(!activeSession.userAnswers[activeSession.currentIndex] || typeof activeSession.userAnswers[activeSession.currentIndex] !== 'object') {
