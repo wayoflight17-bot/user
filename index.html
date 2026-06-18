@@ -1599,9 +1599,27 @@
                 e.returnValue = '';
             }
         });
-        // ------------------------------------
+
+        // Prevent browser back button during exam
+        history.pushState(null, null, window.location.href);
+        window.addEventListener('popstate', () => {
+            if (activeSession) {
+                alert('❌ You cannot go back during an exam. Your exam will be submitted.');
+                window.submitExam();
+                history.pushState(null, null, window.location.href);
+            }
+        });
 
         window.switchView = (id) => {
+            // Prevent switching views while exam is active
+            if (activeSession && id !== 'view-exam' && id !== 'view-review') {
+                if (!confirm('❌ Exiting the exam will end it immediately. Are you sure?')) {
+                    return;
+                }
+                window.submitExam();
+                return;
+            }
+            
             ['view-auth', 'view-onboarding', 'view-dashboard', 'view-exam', 'view-review', 'view-people', 'view-profile', 'view-certificates', 'view-study'].forEach(v => {
                 const el = document.getElementById(v);
                 if(el) el.classList.add('hidden-view');
@@ -2571,33 +2589,31 @@
                 examState.streak += 1;
                 examState.correct += 1;
 
-                feedbackEl.className = 'mt-8 p-6 rounded-2xl text-center font-bold text-lg animate-bounce bg-gradient-to-r from-green-100 to-emerald-100 border-2 border-green-400';
-                feedbackText.innerHTML = '✅ Correct! +10 XP';
-                feedbackText.style.color = '#10b981';
+                // Silent feedback - no message shown
+                feedbackEl.className = '';
+                feedbackText.innerHTML = '';
                 correctDisplay.innerHTML = '';
+                feedbackEl.classList.add('hidden-view');
 
                 confetti();
             } else {
                 examState.streak = 0;
 
-                feedbackEl.className = 'mt-8 p-6 rounded-2xl text-center font-bold text-lg bg-gradient-to-r from-red-100 to-rose-100 border-2 border-red-400 shake';
-                feedbackText.innerHTML = '❌ Incorrect';
-                feedbackText.style.color = '#ef4444';
-                
-                if (correctAnswer) {
-                    correctDisplay.innerHTML = `<div class="mt-2 text-sm font-medium text-slate-700">Correct answer: <span class="font-black text-green-600">"${correctAnswer}"</span></div>`;
-                }
+                // Silent feedback - no message shown
+                feedbackEl.className = '';
+                feedbackText.innerHTML = '';
+                correctDisplay.innerHTML = '';
+                feedbackEl.classList.add('hidden-view');
             }
 
             window.updateExamDisplay();
-            feedbackEl.classList.remove('hidden-view');
             
             // Disable further input
             document.getElementById('options-container').style.pointerEvents = 'none';
             document.getElementById('options-container').style.opacity = '0.6';
             
-            // Auto next after 2 seconds
-            await new Promise(r => setTimeout(r, 2000));
+            // Auto next after 1.5 seconds (shorter wait, no message shown)
+            await new Promise(r => setTimeout(r, 1500));
             
             examState.answered += 1;
 
@@ -2726,43 +2742,55 @@
             else if (qData.type === 'fill') {
                 // Fill in the blanks with drag-and-drop (Duolingo style)
                 const userAnswers = activeSession.userAnswers[idx] || {};
-                const options = qData.options || []; // 2-3 draggable options
-                const blanks = qData.blanks || []; // Array of blank positions
+                const options = qData.options || []; // Admin must provide this
+                const blanks = qData.blanks || [];
                 
-                // Build the question with draggable blanks
+                if (!options || options.length === 0) {
+                    container.innerHTML = `
+                        <div style="padding:24px;background:#fef3c7;border:2px solid #fbbf24;border-radius:12px;text-align:center;">
+                            <p style="font-size:14px;font-weight:bold;color:#92400e;margin:0;">⚠️ Teacher Error</p>
+                            <p style="font-size:13px;color:#b45309;margin:8px 0 0 0;">This question needs options to be set by the teacher. Contact your teacher to fix this question.</p>
+                        </div>
+                    `;
+                    document.getElementById('btn-next').style.pointerEvents = 'none';
+                    document.getElementById('btn-next').style.opacity = '0.5';
+                    return;
+                }
+
+                // Build question display
                 let questionDisplay = qData.q;
-                blanks.forEach((blankId, idx) => {
+                blanks.forEach((blankId, i) => {
                     const filledWith = userAnswers[blankId] || null;
-                    const blankSpan = `<span class="drag-blank" id="blank-${blankId}" data-blank-id="${blankId}" style="display:inline-block;min-width:100px;padding:6px 12px;margin:0 4px;border:2px dashed #818cf8;border-radius:8px;background:#eef2ff;text-align:center;font-weight:bold;color:#1e40af;cursor:pointer;">
-                        ${filledWith || '____'}
+                    const blankSpan = `<span class="drag-blank" id="blank-${blankId}" data-blank-id="${blankId}" style="display:inline-block;min-width:120px;padding:8px 14px;margin:4px 6px;border:3px dashed #2563eb;border-radius:8px;background:#dbeafe;text-align:center;font-weight:bold;color:#1e40af;cursor:grab;font-size:14px;transition:all 0.2s;">
+                        ${filledWith || '_____'}
                     </span>`;
-                    questionDisplay = questionDisplay.replace(`[${idx}]`, blankSpan);
+                    questionDisplay = questionDisplay.replace(`[${i}]`, blankSpan);
                 });
 
                 container.innerHTML = `
-                    <div class="space-y-6">
+                    <div style="display:flex;flex-direction:column;gap:20px;">
                         <!-- Question display -->
-                        <div class="p-6 bg-blue-50 border-2 border-blue-200 rounded-2xl text-lg leading-relaxed">
-                            <p class="text-slate-800" style="line-height:2;">${questionDisplay}</p>
+                        <div style="padding:16px 20px;background:#eff6ff;border:2px solid #0284c7;border-radius:12px;font-size:16px;line-height:1.8;color:#0c4a6e;">
+                            ${questionDisplay}
                         </div>
 
                         <!-- Draggable options -->
-                        <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:16px;background:#f1f5f9;border-radius:16px;border:2px dashed #cbd5e1;">
+                        <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:16px;background:#f8fafc;border:2px dashed #94a3b8;border-radius:12px;">
                             ${options.map((opt, i) => {
                                 const isUsed = Object.values(userAnswers).includes(opt);
                                 return `
-                                <div draggable="${!isUsed}" 
+                                <div draggable="${!isUsed ? 'true' : 'false'}" 
                                      id="option-${i}"
                                      data-option="${opt}"
-                                     ondragstart="if(!event.target.style.opacity.includes('0.4')) window.fillDragStart(event)"
+                                     ondragstart="if(!this.style.opacity.includes('0.3')) window.fillDragStart(event)"
                                      ondragend="window.fillDragEnd(event)"
-                                     style="padding:8px 16px;background:${isUsed ? '#d1d5db' : '#3b82f6'};color:white;border-radius:12px;font-weight:bold;font-size:14px;cursor:${isUsed ? 'default' : 'move'};opacity:${isUsed ? '0.4' : '1'};transition:all 0.2s;user-select:none;">
+                                     style="padding:10px 16px;background:${isUsed ? '#d1d5db' : '#3b82f6'};color:white;border-radius:10px;font-weight:bold;font-size:14px;cursor:${isUsed ? 'default' : 'grab'};opacity:${isUsed ? '0.3' : '1'};user-select:none;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
                                     ${opt}
                                 </div>`;
                             }).join('')}
                         </div>
 
-                        <div style="text-align:center;font-size:12px;color:#64748b;font-weight:500;">Drag options into the blanks</div>
+                        <div style="text-align:center;font-size:12px;color:#64748b;font-weight:500;">📌 Drag option boxes into the blanks above</div>
                     </div>
                 `;
 
@@ -2773,7 +2801,7 @@
                         el.addEventListener('drop', window.fillDrop);
                         el.addEventListener('dragleave', window.fillDragLeave);
                     });
-                }, 100);
+                }, 50);
             }
             else if (qData.type === 'match') {
                 // Match the following - Duolingo style (click to pair)
@@ -2794,9 +2822,12 @@
                 ];
 
                 container.innerHTML = `
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;margin:20px 0;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;margin:20px 0;position:relative;">
+                        <!-- Canvas for lines -->
+                        <canvas id="match-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
+
                         <!-- Left column -->
-                        <div style="display:flex;flex-direction:column;gap:10px;">
+                        <div style="display:flex;flex-direction:column;gap:10px;position:relative;z-index:10;">
                             ${leftItems.map((item, idx) => {
                                 const paired = userAnswers[item];
                                 const color = paired ? colors[idx % colors.length] : null;
@@ -2805,14 +2836,14 @@
                                     id="left-${idx}"
                                     class="match-item left"
                                     data-item="${item}"
-                                    style="padding:12px 16px;text-align:left;border:2px solid ${color ? color.border : '#cbd5e1'};background:${color ? color.bg : '#f8fafc'};color:${color ? color.text : '#374151'};border-radius:12px;font-weight:bold;font-size:14px;cursor:pointer;transition:all 0.2s;">
+                                    style="padding:12px 16px;text-align:left;border:2px solid ${color ? color.border : '#cbd5e1'};background:${color ? color.bg : '#f8fafc'};color:${color ? color.text : '#374151'};border-radius:12px;font-weight:bold;font-size:14px;cursor:pointer;transition:all 0.2s;user-select:none;">
                                     ${item}
                                 </button>`;
                             }).join('')}
                         </div>
 
                         <!-- Right column -->
-                        <div style="display:flex;flex-direction:column;gap:10px;">
+                        <div style="display:flex;flex-direction:column;gap:10px;position:relative;z-index:10;">
                             ${rightItems.map((item, idx) => {
                                 const leftKey = Object.keys(userAnswers).find(k => userAnswers[k] === item);
                                 const color = leftKey ? colors[leftItems.indexOf(leftKey) % colors.length] : null;
@@ -2821,32 +2852,14 @@
                                     id="right-${idx}"
                                     class="match-item right"
                                     data-item="${item}"
-                                    style="padding:12px 16px;text-align:left;border:2px solid ${color ? color.border : '#cbd5e1'};background:${color ? color.bg : '#f8fafc'};color:${color ? color.text : '#374151'};border-radius:12px;font-weight:bold;font-size:14px;cursor:pointer;transition:all 0.2s;">
+                                    style="padding:12px 16px;text-align:left;border:2px solid ${color ? color.border : '#cbd5e1'};background:${color ? color.bg : '#f8fafc'};color:${color ? color.text : '#374151'};border-radius:12px;font-weight:bold;font-size:14px;cursor:pointer;transition:all 0.2s;user-select:none;">
                                     ${item}
                                 </button>`;
                             }).join('')}
                         </div>
                     </div>
 
-                    <!-- Connection lines canvas -->
-                    <canvas id="match-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
-
-                    <!-- Pairs summary -->
-                    ${Object.keys(userAnswers).length > 0 ? `
-                    <div style="margin-top:20px;padding:12px;background:#f0fdf4;border-radius:12px;border:1px solid #bbf7d0;">
-                        <div style="font-size:12px;font-weight:bold;color:#166534;margin-bottom:8px;">✓ Pairs Created:</div>
-                        ${Object.keys(userAnswers).map((left, i) => {
-                            const color = colors[i % colors.length];
-                            return `
-                            <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;margin:4px 0;">
-                                <span style="width:8px;height:8px;border-radius:50%;background:${color.border};"></span>
-                                <span style="font-weight:bold;color:${color.text};">${left}</span>
-                                <span style="color:#94a3b8;">→</span>
-                                <span style="font-weight:bold;color:${color.text};">${userAnswers[left]}</span>
-                                <button onclick="window.matchRemovePair('${left.replace(/'/g, "\\'")}')" style="margin-left:auto;color:#ef4444;border:none;background:none;cursor:pointer;font-weight:bold;font-size:16px;">✕</button>
-                            </div>`;
-                        }).join('')}
-                    </div>` : ''}
+                    <div style="text-align:center;margin-top:16px;font-size:12px;color:#64748b;font-weight:500;">Click left item, then right item to pair. Click again to unpair.</div>
                 `;
 
                 // Draw connection lines
@@ -2854,6 +2867,16 @@
             }
 
             document.getElementById('btn-prev').disabled = idx === 0;
+            document.getElementById('btn-prev').style.opacity = '0.5';
+            document.getElementById('btn-prev').style.cursor = 'not-allowed';
+            
+            if (idx === 0) {
+                document.getElementById('btn-prev').onclick = (e) => {
+                    e.preventDefault();
+                    alert('❌ You cannot go back during an exam. Attempting to exit will end your exam.');
+                };
+            }
+            
             const isLast = idx === total - 1;
             document.getElementById('btn-next').classList.toggle('hidden-view', isLast);
             document.getElementById('btn-finish').classList.toggle('hidden-view', !isLast);
@@ -4187,22 +4210,22 @@
         let matchFirstSelected = null;
 
         window.matchSelectLeft = (item) => {
+            // If clicking same item that's already selected, deselect it
             if (matchFirstSelected && matchFirstSelected.item === item && matchFirstSelected.side === 'left') {
-                // Deselect if clicking same item
                 matchFirstSelected = null;
                 renderActiveQuestion();
                 return;
             }
             
+            // If first selection was left, replace it
             if (matchFirstSelected && matchFirstSelected.side === 'left') {
-                // Replace selection if clicking different left item
                 matchFirstSelected = { item, side: 'left' };
                 renderActiveQuestion();
                 return;
             }
             
+            // If first selection was right, create pair
             if (matchFirstSelected && matchFirstSelected.side === 'right') {
-                // Create pair
                 const idx = activeSession.currentIndex;
                 const userAnswers = activeSession.userAnswers[idx] || {};
                 userAnswers[item] = matchFirstSelected.item;
@@ -4221,22 +4244,22 @@
         };
 
         window.matchSelectRight = (item) => {
+            // If clicking same item that's already selected, deselect it
             if (matchFirstSelected && matchFirstSelected.item === item && matchFirstSelected.side === 'right') {
-                // Deselect
                 matchFirstSelected = null;
                 renderActiveQuestion();
                 return;
             }
             
+            // If first selection was right, replace it
             if (matchFirstSelected && matchFirstSelected.side === 'right') {
-                // Replace
                 matchFirstSelected = { item, side: 'right' };
                 renderActiveQuestion();
                 return;
             }
             
+            // If first selection was left, create pair
             if (matchFirstSelected && matchFirstSelected.side === 'left') {
-                // Create pair
                 const idx = activeSession.currentIndex;
                 const userAnswers = activeSession.userAnswers[idx] || {};
                 userAnswers[matchFirstSelected.item] = item;
