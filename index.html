@@ -746,10 +746,18 @@
             <div style="position:absolute;bottom:-40px;left:-40px;width:160px;height:160px;border-radius:50%;background:rgba(99,102,241,0.12);pointer-events:none"></div>
             <div class="max-w-3xl mx-auto relative z-10">
                 <div class="flex items-center gap-3 mb-3">
+                    <div id="study-back-btn-wrap" class="hidden">
+                        <button onclick="window.backToSeasonList()" class="flex items-center gap-1.5 px-3 py-2 -ml-1 mb-2 bg-white/10 hover:bg-white/20 backdrop-blur rounded-xl text-white text-xs font-black transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                            All Seasons
+                        </button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 mb-3">
                     <div class="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center text-xl">📚</div>
                     <div>
-                        <h2 class="text-2xl font-black text-white tracking-tight">Study Zone</h2>
-                        <p class="text-indigo-200 text-xs font-semibold">All your exam prep in one place</p>
+                        <h2 class="text-2xl font-black text-white tracking-tight" id="study-hero-title">Study Zone</h2>
+                        <p class="text-indigo-200 text-xs font-semibold" id="study-hero-subtitle">All your exam prep in one place</p>
                     </div>
                 </div>
                 <!-- Active season banner inside hero -->
@@ -762,7 +770,7 @@
                     <span class="px-2.5 py-1 bg-emerald-400/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-black rounded-full uppercase tracking-wide">Active</span>
                 </div>
                 <!-- Search bar in hero -->
-                <div class="relative mt-4">
+                <div class="relative mt-4" id="study-search-wrap">
                     <input type="text" id="study-search" oninput="window.filterStudyView()" placeholder="Search topics, titles…" class="w-full px-5 py-3 pl-11 rounded-2xl bg-white/10 backdrop-blur border border-white/20 text-white placeholder-indigo-300 font-semibold text-sm outline-none focus:bg-white/15 focus:border-white/40 transition-all">
                     <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
                 </div>
@@ -770,7 +778,7 @@
         </div>
 
         <!-- Filter chips — overlapping the hero bottom -->
-        <div class="max-w-3xl mx-auto px-4 -mt-5 relative z-20 mb-6">
+        <div class="max-w-3xl mx-auto px-4 -mt-5 relative z-20 mb-6" id="study-filterbar-wrap">
             <div id="study-filter-bar" class="flex gap-2 flex-wrap overflow-x-auto pb-1 scrollbar-hide"></div>
         </div>
 
@@ -781,8 +789,8 @@
         <div id="study-empty" class="hidden max-w-3xl mx-auto px-4 mt-8">
             <div class="text-center py-20 bg-white rounded-3xl border border-slate-200 shadow-sm">
                 <div class="text-6xl mb-4">📖</div>
-                <p class="font-black text-slate-600 text-lg">No study material yet</p>
-                <p class="text-sm text-slate-400 mt-2 font-medium">Your teacher will publish Instagram posts and YouTube videos here for you to study.</p>
+                <p class="font-black text-slate-600 text-lg" id="study-empty-title">No study material yet</p>
+                <p class="text-sm text-slate-400 mt-2 font-medium" id="study-empty-subtitle">Your teacher will publish Instagram posts and YouTube videos here for you to study.</p>
             </div>
         </div>
     </div>
@@ -1669,8 +1677,10 @@
             if (id === 'view-certificates') {
                 window.renderMyCertificates();
             }
-            // Render study content
+            // Render study content — always start at the season list when (re)entering the tab
             if (id === 'view-study') {
+                studySelectedSeasonId = null;
+                studyFilterActive = 'all';
                 window.renderStudyView();
             }
         };
@@ -2102,11 +2112,17 @@
             unsubscribes.push(onSnapshot(getPublicCol('exam_quizzes'), snapshot => {
                 MASTER_QUIZZES = snapshot.empty ? [] : snapshot.docs.map(d => ({id: d.id, ...d.data()}));
                 renderDashboard();
+                if (!document.getElementById('view-study').classList.contains('hidden-view')) {
+                    window.renderStudyView();
+                }
             }));
             
             unsubscribes.push(onSnapshot(getPublicCol('exam_seasons'), snapshot => {
                 globalData.seasons = snapshot.empty ? [] : snapshot.docs.map(d => ({id: d.id, ...d.data()}));
                 renderDashboard();
+                if (!document.getElementById('view-study').classList.contains('hidden-view')) {
+                    window.renderStudyView();
+                }
                 // Show winner popup once per announcement
                 if (userData) checkAndShowWinnerPopup();
             }));
@@ -2176,6 +2192,71 @@
             renderDashboard();
         };
 
+        // Renders one quiz/test card — shared between the Home dashboard grid and the
+        // Study tab's per-season detail view, so behavior/styling always stays in sync.
+        const renderQuizCardHTML = (q, myResultsAllTime) => {
+            const existingResult = myResultsAllTime.find(r => r.testId === q.id);
+
+            let availabilityBadge = '';
+            let isAvailable = true;
+            const now = Date.now();
+
+            // Check Tie-Breaker status first
+            if (q.restrictedTo && q.restrictedTo.length > 0) {
+                availabilityBadge = `<span class="px-2 py-1 bg-rose-100 text-rose-800 border border-rose-200 text-[10px] font-black rounded uppercase animate-pulse">🔥 Draw Test - Required</span>`;
+            }
+            // Check Timings
+            else if (!q.alwaysAvailable && (q.availableFrom || q.availableTo)) {
+                if (q.availableFrom && now < q.availableFrom) {
+                    isAvailable = false;
+                    availabilityBadge = `<span class="px-2 py-1 bg-amber-100 text-amber-800 text-[10px] font-black rounded uppercase">Opens: ${new Date(q.availableFrom).toLocaleString()}</span>`;
+                } else if (q.availableTo && now > q.availableTo) {
+                    isAvailable = false;
+                    availabilityBadge = `<span class="px-2 py-1 bg-rose-100 text-rose-800 text-[10px] font-black rounded uppercase">Closed</span>`;
+                } else if (q.availableTo) {
+                    availabilityBadge = `<span class="px-2 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded uppercase">Closes: ${new Date(q.availableTo).toLocaleString()}</span>`;
+                }
+            } else {
+                availabilityBadge = `<span class="px-2 py-1 bg-indigo-100 text-indigo-800 text-[10px] font-black rounded uppercase">Always Open</span>`;
+            }
+
+            // Season context badge — makes the ranking rules visible right on the card
+            const qSeason = q.seasonId ? (globalData.seasons || []).find(s => s.id === q.seasonId) : null;
+            if (qSeason) {
+                const seasonLive = now >= qSeason.start && now <= qSeason.end;
+                availabilityBadge += ` <span class="px-2 py-1 ${seasonLive ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-slate-100 text-slate-500 border border-slate-200'} text-[10px] font-black rounded uppercase">${seasonLive ? `🟢 Live · ${qSeason.name}` : `📅 Season Ended · No Ranking`}</span>`;
+            }
+
+            return `
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all flex flex-col relative overflow-hidden group ${q.restrictedTo && q.restrictedTo.length > 0 ? 'ring-2 ring-rose-400' : ''}">
+                ${existingResult ? '<div class="absolute -right-10 -top-10 w-32 h-32 bg-emerald-50 rounded-full"></div>' : ''}
+                <div class="relative z-10 flex flex-col h-full">
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-black text-xl text-slate-800">${q.title}</h4>
+                    </div>
+                    <div class="mb-4 flex flex-wrap gap-1.5">${availabilityBadge}</div>
+                    <p class="text-sm text-slate-500 mb-4 line-clamp-2">${q.desc}</p>
+                    <div class="flex-1"></div>
+                    ${existingResult ? `
+                        <div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center mb-3">
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Score Achieved</span>
+                            <span class="px-3 py-1 bg-emerald-100 text-emerald-800 font-black rounded-lg text-sm">${existingResult.score} XP</span>
+                        </div>
+                        <button onclick="window.viewPastResult('${existingResult.id}')" class="w-full py-3.5 bg-slate-50 text-slate-600 rounded-xl font-bold hover:bg-slate-100 border border-slate-200 transition-colors">Review Results</button>
+                    ` : `
+                        <div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center mb-3">
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Questions</span>
+                            <span class="px-3 py-1 bg-slate-100 text-slate-600 font-bold rounded-lg text-xs">${q.questions.length} Qs</span>
+                        </div>
+                        <button ${!isAvailable ? 'disabled' : ''} onclick="window.showExamWarning('${q.id}')" class="w-full py-3.5 ${isAvailable ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-100 active:scale-95' : 'bg-slate-200 text-slate-400 cursor-not-allowed'} rounded-xl font-black transition-all flex justify-center items-center gap-2">
+                            ${isAvailable ? 'Enter Challenge' : 'Not Available'} 
+                            ${isAvailable ? '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>' : ''}
+                        </button>
+                    `}
+                </div>
+            </div>`;
+        };
+
         const renderDashboard = () => {
             if(!currentUser || !userData) return;
             
@@ -2207,7 +2288,8 @@
                 if(leaderboard.length === 0) {
                     lbContainer.innerHTML = `<div class="p-8 text-center text-slate-400 font-bold text-sm">Be the first to score!</div>`;
                 } else {
-                    lbContainer.innerHTML = leaderboard.slice(0, 10).map((u, i) => {
+                    const lbLimit = useSeason ? 5 : 10; // Season ranking = Top 5, All-time ranking = Top 10
+                    lbContainer.innerHTML = leaderboard.slice(0, lbLimit).map((u, i) => {
                         const isMe = u.id === currentUser.uid;
                         let style = 'bg-white border-slate-100 text-slate-700';
                         let rankDisplay = `#${i+1}`;
@@ -2288,10 +2370,17 @@
 
             const quizGrid = document.getElementById('quiz-grid');
             
-            // Filter out restricted quizzes that don't belong to the current user
+            // Filter out restricted quizzes that don't belong to the current user.
+            // Season-linked tests only appear on Home while their season is live —
+            // once a season ends its test is still attemptable, but from the Study
+            // tab (tap that season) rather than cluttering the Home feed.
+            const activeSeasonNow = getActiveSeason();
             const availableQuizzes = MASTER_QUIZZES.filter(q => {
                 if (q.restrictedTo && q.restrictedTo.length > 0) {
                     return q.restrictedTo.includes(currentUser.uid);
+                }
+                if (q.seasonId) {
+                    return !!activeSeasonNow && q.seasonId === activeSeasonNow.id;
                 }
                 return true;
             });
@@ -2301,61 +2390,7 @@
             if (availableQuizzes.length === 0) {
                 quizGrid.innerHTML = `<div class="col-span-full p-8 text-center text-slate-500 font-bold bg-slate-50 border border-slate-200 rounded-3xl">No challenges mapped yet. Stay tuned!</div>`;
             } else {
-                quizGrid.innerHTML = availableQuizzes.map(q => {
-                    const existingResult = myResultsAllTime.find(r => r.testId === q.id);
-                    
-                    let availabilityBadge = '';
-                    let isAvailable = true;
-                    const now = Date.now();
-
-                    // Check Tie-Breaker status first
-                    if (q.restrictedTo && q.restrictedTo.length > 0) {
-                        availabilityBadge = `<span class="px-2 py-1 bg-rose-100 text-rose-800 border border-rose-200 text-[10px] font-black rounded uppercase animate-pulse">🔥 Draw Test - Required</span>`;
-                    }
-                    // Check Timings
-                    else if (!q.alwaysAvailable && (q.availableFrom || q.availableTo)) {
-                        if (q.availableFrom && now < q.availableFrom) {
-                            isAvailable = false;
-                            availabilityBadge = `<span class="px-2 py-1 bg-amber-100 text-amber-800 text-[10px] font-black rounded uppercase">Opens: ${new Date(q.availableFrom).toLocaleString()}</span>`;
-                        } else if (q.availableTo && now > q.availableTo) {
-                            isAvailable = false;
-                            availabilityBadge = `<span class="px-2 py-1 bg-rose-100 text-rose-800 text-[10px] font-black rounded uppercase">Closed</span>`;
-                        } else if (q.availableTo) {
-                            availabilityBadge = `<span class="px-2 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded uppercase">Closes: ${new Date(q.availableTo).toLocaleString()}</span>`;
-                        }
-                    } else {
-                        availabilityBadge = `<span class="px-2 py-1 bg-indigo-100 text-indigo-800 text-[10px] font-black rounded uppercase">Always Open</span>`;
-                    }
-
-                    return `
-                    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all flex flex-col relative overflow-hidden group ${q.restrictedTo && q.restrictedTo.length > 0 ? 'ring-2 ring-rose-400' : ''}">
-                        ${existingResult ? '<div class="absolute -right-10 -top-10 w-32 h-32 bg-emerald-50 rounded-full"></div>' : ''}
-                        <div class="relative z-10 flex flex-col h-full">
-                            <div class="flex justify-between items-start mb-2">
-                                <h4 class="font-black text-xl text-slate-800">${q.title}</h4>
-                            </div>
-                            <div class="mb-4">${availabilityBadge}</div>
-                            <p class="text-sm text-slate-500 mb-4 line-clamp-2">${q.desc}</p>
-                            <div class="flex-1"></div>
-                            ${existingResult ? `
-                                <div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center mb-3">
-                                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Score Achieved</span>
-                                    <span class="px-3 py-1 bg-emerald-100 text-emerald-800 font-black rounded-lg text-sm">${existingResult.score} XP</span>
-                                </div>
-                                <button onclick="window.viewPastResult('${existingResult.id}')" class="w-full py-3.5 bg-slate-50 text-slate-600 rounded-xl font-bold hover:bg-slate-100 border border-slate-200 transition-colors">Review Results</button>
-                            ` : `
-                                <div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center mb-3">
-                                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Questions</span>
-                                    <span class="px-3 py-1 bg-slate-100 text-slate-600 font-bold rounded-lg text-xs">${q.questions.length} Qs</span>
-                                </div>
-                                <button ${!isAvailable ? 'disabled' : ''} onclick="window.showExamWarning('${q.id}')" class="w-full py-3.5 ${isAvailable ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-100 active:scale-95' : 'bg-slate-200 text-slate-400 cursor-not-allowed'} rounded-xl font-black transition-all flex justify-center items-center gap-2">
-                                    ${isAvailable ? 'Enter Challenge' : 'Not Available'} 
-                                    ${isAvailable ? '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>' : ''}
-                                </button>
-                            `}
-                        </div>
-                    </div>`;
-                }).join('');
+                quizGrid.innerHTML = availableQuizzes.map(q => renderQuizCardHTML(q, myResultsAllTime)).join('');
             }
 
             if(document.getElementById('view-exam').classList.contains('hidden-view') && 
@@ -3908,8 +3943,10 @@
         // STUDY CONTENT — USER VIEW
         // ========================
 
-        // State: currently active filter & search
+        // State: currently active filter & search, and which season "drawer" is open
+        // (null = season list overview, 'general' = non-season bucket, else a season id)
         let studyFilterActive = 'all';
+        let studySelectedSeasonId = null;
         const carouselState = {};
 
         const extractYTId = (url) => {
@@ -3922,31 +3959,117 @@
             return null;
         };
 
-        window.renderStudyView = () => {
+        // ===== STUDY TAB — Level 1: list of all seasons (+ General bucket) =====
+        const renderSeasonListView = () => {
+            const grid = document.getElementById('study-content-grid');
+            const empty = document.getElementById('study-empty');
+            document.getElementById('study-filterbar-wrap')?.classList.add('hidden-view');
+            document.getElementById('study-search-wrap')?.classList.add('hidden-view');
+            document.getElementById('study-back-btn-wrap')?.classList.add('hidden');
+            document.getElementById('study-hero-title').innerText = 'Study Zone';
+            document.getElementById('study-hero-subtitle').innerText = 'Tap a season to see its material & test';
+
+            const now = Date.now();
+            const allItems = globalData.studyContent || [];
+            const allQuizzes = MASTER_QUIZZES || [];
+            const seasons = (globalData.seasons || []).slice().sort((a, b) => {
+                const rank = (s) => (now >= s.start && now <= s.end) ? 2 : (now < s.start ? 1 : 0); // live, then upcoming, then ended
+                const ra = rank(a), rb = rank(b);
+                if (rb !== ra) return rb - ra;
+                return b.start - a.start; // newest first within the same group
+            });
+
+            const seasonCards = seasons.map(s => {
+                const isLive = now >= s.start && now <= s.end;
+                const isUpcoming = now < s.start;
+                const itemCount = allItems.filter(x => x.seasonId === s.id).length;
+                const quizCount = allQuizzes.filter(q => q.seasonId === s.id).length;
+                const statusBadge = isLive
+                    ? `<span class="px-2.5 py-1 bg-emerald-100 border border-emerald-200 text-emerald-700 text-[10px] font-black rounded-full uppercase tracking-wide">🟢 Live</span>`
+                    : isUpcoming
+                        ? `<span class="px-2.5 py-1 bg-amber-100 border border-amber-200 text-amber-700 text-[10px] font-black rounded-full uppercase tracking-wide">📅 Upcoming</span>`
+                        : `<span class="px-2.5 py-1 bg-slate-100 border border-slate-200 text-slate-500 text-[10px] font-black rounded-full uppercase tracking-wide">✅ Ended</span>`;
+
+                return `
+                <button onclick="window.openSeasonDetail('${s.id}')" class="w-full text-left bg-white p-5 rounded-3xl border-2 ${isLive ? 'border-emerald-200 shadow-md' : 'border-slate-200'} shadow-sm hover:shadow-lg transition-all flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl flex-shrink-0 flex items-center justify-center text-2xl ${isLive ? 'bg-gradient-to-br from-emerald-400 to-teal-500' : 'bg-slate-100'}">${isLive ? '🏆' : '📁'}</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1 flex-wrap">
+                            <span class="font-black text-slate-800 text-base">${s.name}</span>
+                            ${statusBadge}
+                        </div>
+                        <div class="text-xs font-bold text-slate-400">${new Date(s.start).toLocaleDateString('en-IN',{day:'numeric',month:'short'})} — ${new Date(s.end).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>
+                        <div class="text-xs font-bold text-slate-500 mt-1">${itemCount} study item${itemCount !== 1 ? 's' : ''}${quizCount > 0 ? ` · 📝 ${quizCount} test${quizCount !== 1 ? 's' : ''}` : ''}</div>
+                    </div>
+                    <svg class="w-5 h-5 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                </button>`;
+            }).join('');
+
+            // "General" bucket — content/tests not tied to any season
+            const seasonIdSet = new Set(seasons.map(s => s.id));
+            const generalItemCount = allItems.filter(x => !x.seasonId || !seasonIdSet.has(x.seasonId)).length;
+            const generalQuizCount = allQuizzes.filter(q => !q.seasonId || !seasonIdSet.has(q.seasonId)).length;
+            const generalCard = generalItemCount > 0 ? `
+                <button onclick="window.openSeasonDetail('general')" class="w-full text-left bg-white p-5 rounded-3xl border-2 border-slate-200 shadow-sm hover:shadow-lg transition-all flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl flex-shrink-0 flex items-center justify-center text-2xl bg-slate-100">📂</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-black text-slate-800 text-base mb-1">General</div>
+                        <div class="text-xs font-bold text-slate-500">${generalItemCount} study item${generalItemCount !== 1 ? 's' : ''}${generalQuizCount > 0 ? ` · 📝 ${generalQuizCount} test${generalQuizCount !== 1 ? 's' : ''}` : ''}</div>
+                    </div>
+                    <svg class="w-5 h-5 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                </button>` : '';
+
+            const cardsHTML = seasonCards + generalCard;
+            if (!cardsHTML) {
+                grid.innerHTML = '';
+                document.getElementById('study-empty-title').innerText = 'No study material yet';
+                document.getElementById('study-empty-subtitle').innerText = 'Your teacher will publish seasons with study content and tests here.';
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+            grid.innerHTML = `<div class="space-y-3">${cardsHTML}</div>`;
+        };
+
+        // ===== STUDY TAB — Level 2: one season's (or General's) material + test =====
+        const renderSeasonDetailView = () => {
             const grid = document.getElementById('study-content-grid');
             const empty = document.getElementById('study-empty');
             const filterBar = document.getElementById('study-filter-bar');
-            if (!grid) return;
+            document.getElementById('study-filterbar-wrap')?.classList.remove('hidden-view');
+            document.getElementById('study-search-wrap')?.classList.remove('hidden-view');
+            document.getElementById('study-back-btn-wrap')?.classList.remove('hidden');
+            document.getElementById('study-active-season-banner')?.classList.add('hidden');
 
             const now = Date.now();
-            const activeSeason = (globalData.seasons || []).find(s => now >= s.start && now <= s.end);
+            const isGeneral = studySelectedSeasonId === 'general';
+            const season = isGeneral ? null : (globalData.seasons || []).find(s => s.id === studySelectedSeasonId);
 
-            // --- Active season hero banner ---
-            const banner = document.getElementById('study-active-season-banner');
-            const bannerName = document.getElementById('study-banner-name');
-            const bannerDates = document.getElementById('study-banner-dates');
-            if (banner && activeSeason) {
-                bannerName.innerText = activeSeason.name;
-                bannerDates.innerText = `${new Date(activeSeason.start).toLocaleDateString('en-IN',{day:'numeric',month:'short'})} — ${new Date(activeSeason.end).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}`;
-                banner.classList.remove('hidden');
-            } else if (banner) {
-                banner.classList.add('hidden');
+            if (!isGeneral && !season) {
+                window.backToSeasonList(); // season got deleted while user had it open — bounce back
+                return;
             }
 
-            const allItems = (globalData.studyContent || []);
+            const isLive = !!season && now >= season.start && now <= season.end;
+            const isPast = !!season && now > season.end;
 
-            // --- Build filter chips: All + unique categories ---
-            const categories = [...new Set(allItems.map(x => x.category).filter(Boolean))];
+            document.getElementById('study-hero-title').innerText = isGeneral ? 'General' : season.name;
+            document.getElementById('study-hero-subtitle').innerText = isGeneral
+                ? 'Study material & tests not tied to a specific season'
+                : `${new Date(season.start).toLocaleDateString('en-IN',{day:'numeric',month:'short'})} — ${new Date(season.end).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})} · ${isLive ? '🟢 Live now' : isPast ? '✅ Ended' : '📅 Upcoming'}`;
+
+            const allSeasonIds = new Set((globalData.seasons || []).map(s => s.id));
+            const allItems = globalData.studyContent || [];
+            const bucketItems = isGeneral
+                ? allItems.filter(x => !x.seasonId || !allSeasonIds.has(x.seasonId))
+                : allItems.filter(x => x.seasonId === studySelectedSeasonId);
+            const bucketQuizzes = (isGeneral
+                ? MASTER_QUIZZES.filter(q => !q.seasonId || !allSeasonIds.has(q.seasonId))
+                : MASTER_QUIZZES.filter(q => q.seasonId === studySelectedSeasonId)
+            ).filter(q => !q.restrictedTo || q.restrictedTo.length === 0 || q.restrictedTo.includes(currentUser.uid));
+
+            // --- Filter chips scoped to this bucket's categories only ---
+            const categories = [...new Set(bucketItems.map(x => x.category).filter(Boolean))];
             if (filterBar) {
                 filterBar.innerHTML = [
                     { val: 'all', label: '✦ All' },
@@ -3961,9 +4084,9 @@
                 }).join('');
             }
 
-            // --- Apply search + filter ---
+            // --- Apply search + filter (only affects study material, the test always shows) ---
             const searchTerm = (document.getElementById('study-search')?.value || '').toLowerCase().trim();
-            const filtered = allItems.filter(item => {
+            const filteredItems = bucketItems.filter(item => {
                 const matchFilter = studyFilterActive === 'all'
                     || item.type === studyFilterActive
                     || item.category === studyFilterActive;
@@ -3971,81 +4094,100 @@
                     || item.title?.toLowerCase().includes(searchTerm)
                     || item.category?.toLowerCase().includes(searchTerm);
                 return matchFilter && matchSearch;
-            });
+            }).sort((a, b) => (a.order || 999) - (b.order || 999) || (a.createdAt || 0) - (b.createdAt || 0));
 
-            if (filtered.length === 0) {
+            if (filteredItems.length === 0 && bucketQuizzes.length === 0) {
                 grid.innerHTML = '';
+                document.getElementById('study-empty-title').innerText = 'Nothing here yet';
+                document.getElementById('study-empty-subtitle').innerText = isGeneral
+                    ? 'No general study material has been published yet.'
+                    : `No study material or tests have been published for ${season.name} yet.`;
                 empty.classList.remove('hidden');
                 return;
             }
             empty.classList.add('hidden');
 
-            // --- Group by season, active season first ---
-            const seasons = (globalData.seasons || []).slice().sort((a, b) => {
-                const aActive = now >= a.start && now <= a.end ? 1 : 0;
-                const bActive = now >= b.start && now <= b.end ? 1 : 0;
-                if (bActive !== aActive) return bActive - aActive;
-                return b.start - a.start; // newest season first
-            });
-
-            // Build ordered season bucket list — seasons that actually have content + "general" bucket
-            const buckets = [];
-            seasons.forEach(s => {
-                const items = filtered.filter(x => x.seasonId === s.id)
-                    .sort((a, b) => (a.order || 999) - (b.order || 999) || (a.createdAt || 0) - (b.createdAt || 0));
-                if (items.length > 0) buckets.push({ type: 'season', season: s, items });
-            });
-            const generalItems = filtered.filter(x => !x.seasonId || !seasons.find(s => s.id === x.seasonId))
-                .sort((a, b) => (a.order || 999) - (b.order || 999) || (b.createdAt || 0) - (a.createdAt || 0));
-            if (generalItems.length > 0) buckets.push({ type: 'general', items: generalItems });
-
-            grid.innerHTML = buckets.map(bucket => {
-                const isActive = bucket.type === 'season' && now >= bucket.season.start && now <= bucket.season.end;
-                const isPast = bucket.type === 'season' && now > bucket.season.end;
-
-                const sectionHeader = bucket.type === 'season' ? `
-                    <div class="flex items-center gap-3 mb-5">
-                        <div class="flex items-center gap-2.5 ${isActive
-                            ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white'
-                            : 'bg-slate-200 text-slate-600'
-                        } px-4 py-2 rounded-2xl shadow-sm">
-                            <span class="text-base">${isActive ? '🟢' : isPast ? '✅' : '📅'}</span>
-                            <span class="font-black text-sm">${bucket.season.name}</span>
-                            ${isActive ? `<span class="text-[10px] font-black uppercase tracking-wide bg-white/25 px-2 py-0.5 rounded-full">Active</span>` : ''}
+            // --- Test section (the season's own test lives here, not on Home, once the season ends) ---
+            let testSectionHTML = '';
+            if (bucketQuizzes.length > 0) {
+                const myResultsAllTime = globalData.results.filter(r => r.studentId === currentUser.uid);
+                const pastSeasonNote = isPast ? `
+                    <div class="mb-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs font-bold text-amber-800 flex items-start gap-2">
+                        <span class="text-base flex-shrink-0">ℹ️</span>
+                        <span>This season has ended — you can still attempt the test below. Your XP will still be added to your profile and the all-time Top 10, it just won't count toward this season's Top 5 ranking.</span>
+                    </div>` : '';
+                testSectionHTML = `
+                    <div class="mb-8">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-[11px] font-black text-slate-400 uppercase tracking-widest">📝 ${isGeneral ? 'Tests' : 'Season Test'}</span>
+                            <div class="flex-1 h-px bg-slate-100"></div>
                         </div>
-                        <div class="flex-1 h-px ${isActive ? 'bg-emerald-200' : 'bg-slate-200'}"></div>
-                        <span class="text-xs font-bold text-slate-400">${bucket.items.length} item${bucket.items.length !== 1 ? 's' : ''}</span>
-                    </div>` : `
-                    <div class="flex items-center gap-3 mb-5">
-                        <div class="flex items-center gap-2 bg-slate-100 text-slate-600 px-4 py-2 rounded-2xl">
-                            <span class="text-base">📂</span>
-                            <span class="font-black text-sm">General</span>
-                        </div>
-                        <div class="flex-1 h-px bg-slate-200"></div>
-                        <span class="text-xs font-bold text-slate-400">${bucket.items.length} item${bucket.items.length !== 1 ? 's' : ''}</span>
+                        ${pastSeasonNote}
+                        <div class="space-y-4">${bucketQuizzes.map(q => renderQuizCardHTML(q, myResultsAllTime)).join('')}</div>
                     </div>`;
+            }
 
-                // Further group items within a season by category
-                const catGroups = {};
-                bucket.items.forEach(item => {
-                    const key = item.category || '';
-                    if (!catGroups[key]) catGroups[key] = [];
-                    catGroups[key].push(item);
-                });
+            // --- Study material, grouped by category ---
+            const catGroups = {};
+            filteredItems.forEach(item => {
+                const key = item.category || '';
+                if (!catGroups[key]) catGroups[key] = [];
+                catGroups[key].push(item);
+            });
+            const materialHTML = Object.entries(catGroups).map(([cat, items]) => `
+                ${cat ? `<div class="flex items-center gap-2 mb-3">
+                    <span class="text-[11px] font-black text-slate-400 uppercase tracking-widest">${cat}</span>
+                    <div class="flex-1 h-px bg-slate-100"></div>
+                </div>` : ''}
+                <div class="space-y-4 mb-6">
+                    ${items.map(item => item.type === 'youtube' ? renderYouTubeCard(item) : renderInstagramCard(item)).join('')}
+                </div>`).join('');
 
-                const itemsHTML = Object.entries(catGroups).map(([cat, items]) => `
-                    ${cat ? `<div class="flex items-center gap-2 mb-3">
-                        <span class="text-[11px] font-black text-slate-400 uppercase tracking-widest">${cat}</span>
-                        <div class="flex-1 h-px bg-slate-100"></div>
-                    </div>` : ''}
-                    <div class="space-y-4 mb-6">
-                        ${items.map(item => item.type === 'youtube' ? renderYouTubeCard(item) : renderInstagramCard(item)).join('')}
-                    </div>`).join('');
-
-                return `<div class="study-season-section" data-active="${isActive}">${sectionHeader}${itemsHTML}</div>`;
-            }).join('');
-
+            grid.innerHTML = testSectionHTML + materialHTML;
             requestAnimationFrame(() => initInstagramEmbeds());
+        };
+
+        // ===== STUDY TAB — dispatcher =====
+        window.renderStudyView = () => {
+            const grid = document.getElementById('study-content-grid');
+            if (!grid) return;
+
+            if (studySelectedSeasonId === null) {
+                // Active season banner is only meaningful on the season overview
+                const now = Date.now();
+                const activeSeason = (globalData.seasons || []).find(s => now >= s.start && now <= s.end);
+                const banner = document.getElementById('study-active-season-banner');
+                const bannerName = document.getElementById('study-banner-name');
+                const bannerDates = document.getElementById('study-banner-dates');
+                if (banner && activeSeason) {
+                    bannerName.innerText = activeSeason.name;
+                    bannerDates.innerText = `${new Date(activeSeason.start).toLocaleDateString('en-IN',{day:'numeric',month:'short'})} — ${new Date(activeSeason.end).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}`;
+                    banner.classList.remove('hidden');
+                } else if (banner) {
+                    banner.classList.add('hidden');
+                }
+                renderSeasonListView();
+            } else {
+                renderSeasonDetailView();
+            }
+        };
+
+        window.openSeasonDetail = (id) => {
+            studySelectedSeasonId = id;
+            studyFilterActive = 'all';
+            const searchInput = document.getElementById('study-search');
+            if (searchInput) searchInput.value = '';
+            window.renderStudyView();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.backToSeasonList = () => {
+            studySelectedSeasonId = null;
+            studyFilterActive = 'all';
+            const searchInput = document.getElementById('study-search');
+            if (searchInput) searchInput.value = '';
+            window.renderStudyView();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
         window.filterStudyView = () => window.renderStudyView();
