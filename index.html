@@ -2661,6 +2661,9 @@
                     questions: quizTemplate.questions.map(q => {
                         const mapped = {...q};
                         if(q.type === 'match') mapped.shuffledValues = Object.values(q.pairs).sort(() => Math.random() - 0.5);
+                        if(q.type === 'fill' && Array.isArray(q.options) && q.options.length > 0) {
+                            mapped.options = [...q.options].sort(() => Math.random() - 0.5);
+                        }
                         return mapped;
                     }).sort(() => Math.random() - 0.5), 
                     currentIndex: 0,
@@ -2806,6 +2809,24 @@
                     </div>
                 `;
             }
+            else if (qData.type === 'truefalse') {
+                const userAnswer = activeSession.userAnswers[idx] || '';
+                container.innerHTML = `
+                    <div style="display:flex;flex-direction:column;gap:14px;">
+                        <div onclick="window.pickAnswer('True', 'truefalse')"
+                             class="p-5 border-2 rounded-2xl cursor-pointer transition-all flex items-center gap-4 font-bold ${userAnswer === 'True' ? 'border-emerald-600 bg-gradient-to-r from-emerald-50 to-teal-50 ring-2 ring-emerald-500/30 shadow-lg' : 'border-slate-200 hover:border-emerald-400 bg-white hover:bg-slate-50 hover:shadow-md'}"
+                             style="min-height:80px;padding:20px;">
+                            <div class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center font-black text-lg ${userAnswer === 'True' ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600'}">✅</div>
+                            <span class="text-slate-700 text-lg leading-snug">True</span>
+                        </div>
+                        <div onclick="window.pickAnswer('False', 'truefalse')"
+                             class="p-5 border-2 rounded-2xl cursor-pointer transition-all flex items-center gap-4 font-bold ${userAnswer === 'False' ? 'border-rose-600 bg-gradient-to-r from-rose-50 to-pink-50 ring-2 ring-rose-500/30 shadow-lg' : 'border-slate-200 hover:border-rose-400 bg-white hover:bg-slate-50 hover:shadow-md'}"
+                             style="min-height:80px;padding:20px;">
+                            <div class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center font-black text-lg ${userAnswer === 'False' ? 'bg-rose-600 text-white' : 'bg-slate-200 text-slate-600'}">❌</div>
+                            <span class="text-slate-700 text-lg leading-snug">False</span>
+                        </div>
+                    </div>`;
+            }
             else if (qData.type === 'match') {
                 // Match the following - Duolingo style (click to pair)
                 const userAnswers = activeSession.userAnswers[idx] || {};
@@ -2901,6 +2922,9 @@
             } else if (type === 'fill') {
                 // Simple format: just check against correct
                 isCorrect = (val || '').toString().toLowerCase().trim() === (qData.correct || '').toString().toLowerCase().trim();
+            } else if (type === 'truefalse') {
+                isCorrect = val === qData.correct;
+                renderActiveQuestion();
             }
 
             saveProgress();
@@ -2973,6 +2997,8 @@
 
                 if (q.type === 'mcq') {
                     isCorrect = userAns === q.correct;
+                } else if (q.type === 'truefalse') {
+                    isCorrect = userAns === q.correct;
                 } else if (q.type === 'fill') {
                     // Handle both old (string) and new (object with blanks) formats
                     if (typeof userAns === 'object' && userAns !== null) {
@@ -2996,7 +3022,7 @@
                 }
 
                 if(isCorrect) xpEarned += 10;
-                return { type: q.type, q: q.q, userAns, correctAns: (q.type === 'match' ? q.pairs : (typeof q.correct === 'object' ? q.correct : q.correct)), isCorrect };
+                return { type: q.type, q: q.q, userAns, correctAns: (q.type === 'match' ? q.pairs : q.correct), isCorrect };
             });
 
             const resultDoc = {
