@@ -577,16 +577,14 @@
         <!-- EXAM VIEW - DUOLINGO STYLE -->
         <div id="view-exam" class="hidden-view fade-in bg-gradient-to-b from-slate-50 to-white min-h-screen pb-20">
             
-            <!-- TOP BAR: XP, Streak, Timer -->
+            <!-- TOP BAR: Jump-to-question, Progress, Answered, Timer -->
             <div class="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
                 <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between sm:py-4">
-                    <!-- Left: Streak -->
+                    <!-- Left: Jump to any question (so answers can be revisited & edited) -->
                     <div class="flex items-center gap-4">
-                        <!-- Streak -->
-                        <div id="exam-streak" class="hidden flex items-center gap-1.5 px-3 py-1.5 bg-orange-100 rounded-full">
-                            <span class="text-lg">🔥</span>
-                            <span class="font-black text-orange-700 text-sm" id="streak-count">0</span>
-                        </div>
+                        <button onclick="window.toggleQuestionNav()" id="btn-question-nav" class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-full font-black text-sm hover:bg-indigo-200 active:scale-95 transition-all" title="Jump to any question to review or change your answer">
+                            <span class="text-base">🔢</span><span class="hidden sm:inline">Questions</span>
+                        </button>
                     </div>
 
                     <!-- Center: Progress -->
@@ -599,9 +597,9 @@
 
                     <!-- Right: XP & Timer -->
                     <div class="flex items-center gap-3 sm:gap-4">
-                        <!-- XP -->
-                        <div class="flex items-center gap-1 px-3 py-1.5 bg-yellow-100 rounded-full">
-                            <span class="text-lg">⭐</span>
+                        <!-- Answered progress -->
+                        <div class="flex items-center gap-1 px-3 py-1.5 bg-yellow-100 rounded-full" title="Questions answered">
+                            <span class="text-lg">📝</span>
                             <span class="font-black text-yellow-700 text-sm" id="exam-xp-display">0</span>
                         </div>
                         <!-- Timer -->
@@ -609,6 +607,22 @@
                             <span class="text-sm">⏱️</span>
                             <span id="exam-timer" class="font-black text-sm tabular-nums" style="color: #15803d;">00:00</span>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QUESTION NAVIGATOR PANEL: jump straight to any question (answered or not) to edit it -->
+            <div id="question-nav-panel" class="hidden-view bg-white border-b border-slate-200 shadow-sm">
+                <div class="max-w-4xl mx-auto px-4 py-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-black text-slate-500 uppercase tracking-widest">Tap a question to jump to it &amp; edit your answer</span>
+                        <button onclick="window.toggleQuestionNav()" class="text-slate-400 hover:text-slate-700 text-sm font-bold flex-shrink-0 ml-3">✕ Close</button>
+                    </div>
+                    <div id="question-nav-grid" class="flex flex-wrap gap-2"></div>
+                    <div class="flex items-center flex-wrap gap-x-4 gap-y-1 mt-3 text-[10px] font-bold text-slate-400">
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-indigo-600 inline-block"></span> Current</span>
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-emerald-100 border-2 border-emerald-300 inline-block"></span> Answered</span>
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-slate-100 border-2 border-slate-200 inline-block"></span> Unanswered</span>
                     </div>
                 </div>
             </div>
@@ -2521,21 +2535,32 @@
 
 
         // ===== EXAM STATE & DISPLAY =====
+        // Note: correctness is intentionally NOT revealed while the exam is in
+        // progress (answers can be freely changed). This just shows how many
+        // questions currently have an answer recorded, recomputed fresh every
+        // time so it can never drift out of sync as answers are edited.
         window.updateExamDisplay = () => {
-            // Update XP
             const xpEl = document.getElementById('exam-xp-display');
-            if (xpEl) xpEl.innerText = examState.totalXP;
-            // Update streak
-            const streakEl = document.getElementById('exam-streak');
-            const streakCountEl = document.getElementById('streak-count');
-            if (streakEl && streakCountEl) {
-                if (examState.streak > 0) {
-                    streakEl.classList.remove('hidden');
-                    streakCountEl.innerText = examState.streak;
+            if (xpEl) {
+                if (activeSession) {
+                    let answered = 0;
+                    activeSession.questions.forEach((q, i) => {
+                        const ans = activeSession.userAnswers[i];
+                        if (q.type === 'match') {
+                            const totalPairs = Object.keys(q.pairs || {}).length;
+                            if (ans && typeof ans === 'object' && totalPairs > 0 && Object.keys(ans).length === totalPairs) answered++;
+                        } else if (ans !== undefined && ans !== null && ans !== '') {
+                            answered++;
+                        }
+                    });
+                    xpEl.innerText = `${answered}/${activeSession.questions.length}`;
                 } else {
-                    streakEl.classList.add('hidden');
+                    xpEl.innerText = '0';
                 }
             }
+            // Streak badge is no longer used (it relied on live correctness reveal); keep it hidden.
+            const streakEl = document.getElementById('exam-streak');
+            if (streakEl) streakEl.classList.add('hidden');
         };
 
         // Confetti animation
@@ -2681,6 +2706,7 @@
 
             window.updateExamDisplay();
             window.switchView('view-exam');
+            document.getElementById('question-nav-panel')?.classList.add('hidden-view');
             
             // Hide navigation tabs during exam
             const navUser = document.getElementById('nav-user');
@@ -2741,13 +2767,14 @@
                     const isSelected = activeSession.userAnswers[idx] === opt;
                     const letter = String.fromCharCode(65 + optIdx); // A, B, C, D
                     return `
-                    <div onclick="window.pickAnswer('${opt.replace(/'/g, "\\'")}', 'mcq', '${opt.replace(/'/g, "\\'")}')" 
+                    <div onclick="window.pickAnswer('${opt.replace(/'/g, "\\'")}', 'mcq')" 
                          class="p-5 border-2 rounded-2xl cursor-pointer transition-all flex items-center gap-4 font-bold ${isSelected ? 'border-indigo-600 bg-gradient-to-r from-indigo-50 to-purple-50 ring-2 ring-indigo-500/30 shadow-lg' : 'border-slate-200 hover:border-indigo-400 bg-white hover:bg-slate-50 hover:shadow-md'}" 
                          style="min-height:80px;padding:20px;">
                         <div class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center font-black text-lg flex items-center justify-center ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600'}">
                             ${letter}
                         </div>
                         <span class="text-slate-700 text-lg leading-snug">${opt}</span>
+                        ${isSelected ? `<span class="ml-auto text-indigo-600 text-xl">✓</span>` : ''}
                     </div>`;
                 }).join('');
             } 
@@ -2767,24 +2794,24 @@
                     return;
                 }
 
-                // Question display — tap-to-select (works on mobile AND desktop)
+                // Question display — REAL drag-and-drop (mouse + touch via Pointer Events) with tap-to-select fallback
                 container.innerHTML = `
                     <div style="display:flex;flex-direction:column;gap:16px;">
-                        <!-- Answer display zone -->
-                        <div style="padding:16px 20px;background:${userAnswer ? '#dcfce7' : '#dbeafe'};border:2px solid ${userAnswer ? '#22c55e' : '#2563eb'};border-radius:12px;text-align:center;min-height:60px;display:flex;align-items:center;justify-content:center;font-weight:bold;color:${userAnswer ? '#15803d' : '#1e40af'};font-size:15px;transition:all 0.25s;">
-                            ${userAnswer ? `✅ <strong style="margin-left:6px;">${userAnswer}</strong>` : '👆 Tap an answer below'}
+                        <!-- Drop zone -->
+                        <div id="fill-dropzone" style="padding:18px 20px;background:${userAnswer ? '#dcfce7' : '#dbeafe'};border:3px dashed ${userAnswer ? '#22c55e' : '#2563eb'};border-radius:14px;text-align:center;min-height:64px;display:flex;align-items:center;justify-content:center;font-weight:bold;color:${userAnswer ? '#15803d' : '#1e40af'};font-size:15px;transition:all 0.2s;">
+                            ${userAnswer ? `✅ <strong style="margin-left:6px;">${userAnswer}</strong>` : '⬇️ Drag an answer here, or tap one below'}
                         </div>
 
-                        <!-- Tap-to-select options -->
+                        <!-- Draggable / tappable options -->
                         <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:16px;background:#f8fafc;border:2px dashed #94a3b8;border-radius:12px;">
                             ${options.map((opt) => {
                                 const isSelected = userAnswer === opt;
+                                const safeOpt = opt.replace(/"/g, '&quot;');
                                 return `
-                                <button
-                                    onclick="window.fillTapSelect('${opt.replace(/'/g, "\\'")}', ${idx})"
-                                    style="padding:12px 20px;background:${isSelected ? '#10b981' : '#3b82f6'};color:white;border:none;border-radius:10px;font-weight:bold;font-size:14px;cursor:pointer;user-select:none;transition:all 0.18s;box-shadow:${isSelected ? '0 0 0 3px rgba(16,185,129,0.35)' : '0 2px 6px rgba(0,0,0,0.15)'};transform:${isSelected ? 'scale(1.05)' : 'scale(1)'};"
-                                    onmouseover="this.style.opacity='0.85'"
-                                    onmouseout="this.style.opacity='1'">
+                                <button type="button"
+                                    class="fill-chip"
+                                    data-option="${safeOpt}"
+                                    style="touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;padding:12px 20px;background:${isSelected ? '#10b981' : '#3b82f6'};color:white;border:none;border-radius:10px;font-weight:bold;font-size:14px;cursor:grab;box-shadow:${isSelected ? '0 0 0 3px rgba(16,185,129,0.35)' : '0 2px 6px rgba(0,0,0,0.15)'};transform:${isSelected ? 'scale(1.05)' : 'scale(1)'};transition:transform 0.15s, opacity 0.15s, box-shadow 0.15s;">
                                     ${opt}
                                 </button>`;
                             }).join('')}
@@ -2796,8 +2823,17 @@
                                 ✕ Clear Answer
                             </button>
                         </div>` : ''}
+
+                        <div style="text-align:center;font-size:11px;color:#64748b;font-weight:700;letter-spacing:0.02em;">
+                            ✋ Drag a chip into the box above, or simply tap one to select/change it
+                        </div>
                     </div>
                 `;
+
+                // Wire up unified pointer-based drag-and-drop + tap (works on mouse AND touch)
+                container.querySelectorAll('.fill-chip').forEach(chip => {
+                    chip.addEventListener('pointerdown', (e) => window.fillChipPointerDown(e, chip, idx));
+                });
             }
             else if (qData.type === 'truefalse') {
                 const userAnswer = activeSession.userAnswers[idx] || '';
@@ -2930,72 +2966,32 @@
                 setTimeout(() => window.matchDrawLines(idx, pairs, userAnswers, colors), 250);
             }
 
+            // Keep prev/next/finish buttons in sync with current position
             document.getElementById('btn-prev').disabled = idx === 0;
-            document.getElementById('btn-prev').style.opacity = '0.5';
-            document.getElementById('btn-prev').style.cursor = 'not-allowed';
-            
-            if (idx === 0) {
-                document.getElementById('btn-prev').onclick = (e) => {
-                    e.preventDefault();
-                    alert('❌ You cannot go back during an exam. Attempting to exit will end your exam.');
-                };
-            }
-            
             const isLast = idx === total - 1;
             document.getElementById('btn-next').classList.toggle('hidden-view', isLast);
             document.getElementById('btn-finish').classList.toggle('hidden-view', !isLast);
-        };
-
-        window.pickAnswer = (val, type, displayVal = '') => {
-            const idx = activeSession.currentIndex;
-            const qData = activeSession.questions[idx];
-
-            // Store the answer
-            activeSession.userAnswers[idx] = val;
-
-            // Check if answer is correct
-            let isCorrect = false;
-
-            if (type === 'mcq') {
-                isCorrect = val === qData.correct;
-                renderActiveQuestion();
-            } else if (type === 'fill') {
-                // Simple format: just check against correct
-                isCorrect = (val || '').toString().toLowerCase().trim() === (qData.correct || '').toString().toLowerCase().trim();
-            } else if (type === 'truefalse') {
-                isCorrect = val === qData.correct;
-                renderActiveQuestion();
-            }
-
-            saveProgress();
-
-            // Silent feedback - hide all feedback
-            const feedbackEl = document.getElementById('answer-feedback');
-            if (feedbackEl) {
-                feedbackEl.classList.add('hidden-view');
-            }
-
-            // Update exam state
-            if (isCorrect) {
-                examState.totalXP += 10;
-                examState.streak += 1;
-                examState.correct += 1;
-            } else {
-                examState.streak = 0;
-            }
 
             window.updateExamDisplay();
 
-            // Disable input
-            const container = document.getElementById('options-container');
-            if (container) {
-                container.style.pointerEvents = 'none';
-                container.style.opacity = '0.6';
+            // If the question navigator panel is open, keep its answered/current highlighting fresh
+            const navPanel = document.getElementById('question-nav-panel');
+            if (navPanel && !navPanel.classList.contains('hidden-view')) {
+                window.renderQuestionNav();
             }
+        };
 
-            // Auto next
-            examState.answered += 1;
-            setTimeout(() => window.navQuestion(1), 1500);
+        // Selecting an option just records/changes the answer — it never locks the
+        // question and never auto-advances, so the student can freely change their
+        // mind, and can come back to any earlier question (via Previous) and edit it.
+        window.pickAnswer = (val, type) => {
+            const idx = activeSession.currentIndex;
+
+            // Toggle off if tapping the same answer again, otherwise set/replace it
+            activeSession.userAnswers[idx] = (activeSession.userAnswers[idx] === val) ? '' : val;
+
+            saveProgress();
+            renderActiveQuestion();
         };
 
         window.updateMatchAnswer = (key, val) => {
@@ -3010,6 +3006,50 @@
             activeSession.currentIndex += dir;
             renderActiveQuestion();
             saveProgress();
+        };
+
+        // ===== QUESTION NAVIGATOR — jump straight to any question to review/edit it =====
+        window.toggleQuestionNav = () => {
+            const panel = document.getElementById('question-nav-panel');
+            if (!panel) return;
+            if (panel.classList.contains('hidden-view')) {
+                window.renderQuestionNav();
+                panel.classList.remove('hidden-view');
+            } else {
+                panel.classList.add('hidden-view');
+            }
+        };
+
+        const isQuestionAnswered = (q, ans) => {
+            if (q.type === 'match') {
+                const totalPairs = Object.keys(q.pairs || {}).length;
+                return !!(ans && typeof ans === 'object' && totalPairs > 0 && Object.keys(ans).length === totalPairs);
+            }
+            return ans !== undefined && ans !== null && ans !== '';
+        };
+
+        window.renderQuestionNav = () => {
+            const grid = document.getElementById('question-nav-grid');
+            if (!grid || !activeSession) return;
+            const idx = activeSession.currentIndex;
+            grid.innerHTML = activeSession.questions.map((q, i) => {
+                const answered = isQuestionAnswered(q, activeSession.userAnswers[i]);
+                const isCurrent = i === idx;
+                const cls = isCurrent
+                    ? 'bg-indigo-600 text-white ring-2 ring-offset-2 ring-indigo-400'
+                    : answered
+                        ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-300 hover:bg-emerald-200'
+                        : 'bg-slate-100 text-slate-500 border-2 border-slate-200 hover:bg-slate-200';
+                return `<button onclick="window.goToQuestion(${i})" class="w-10 h-10 rounded-xl font-black text-xs flex items-center justify-center transition-all active:scale-90 ${cls}">${i + 1}</button>`;
+            }).join('');
+        };
+
+        window.goToQuestion = (i) => {
+            if (!activeSession) return;
+            activeSession.currentIndex = i;
+            renderActiveQuestion();
+            saveProgress();
+            document.getElementById('question-nav-panel')?.classList.add('hidden-view');
         };
 
         window.submitExam = async (cheatingFlagOverride = false) => {
@@ -4153,50 +4193,101 @@
             setTimeout(initCarouselTouch, 400);
         };
 
-        // ===== FILL IN THE BLANKS — TAP TO SELECT (works on mobile & desktop) =====
-        // Tap any option button to select it as the answer
+        // ===== FILL IN THE BLANKS — drag-and-drop (mouse + touch) WITH tap-to-select fallback =====
+        // Tapping (no movement) an option toggles it as the answer; dragging it onto
+        // the drop zone sets it as the answer. Both paths just update the stored
+        // answer and re-render — nothing ever locks, so the answer can be changed
+        // as many times as needed, on this question or any earlier one.
         window.fillTapSelect = (opt, idx) => {
-            // Toggle off if already selected
-            if (activeSession.userAnswers[idx] === opt) {
-                activeSession.userAnswers[idx] = '';
-            } else {
-                activeSession.userAnswers[idx] = opt;
-            }
+            activeSession.userAnswers[idx] = (activeSession.userAnswers[idx] === opt) ? '' : opt;
             saveProgress();
             renderActiveQuestion();
+        };
 
-            // Auto-validate after short delay
-            setTimeout(() => {
-                const ans = activeSession.userAnswers[idx];
-                const qData = activeSession.questions[idx];
-                if (ans && ans === qData.correct) {
-                    window.pickAnswer(ans, 'fill');
+        // --- Unified pointer-based drag-and-drop (works identically for mouse, touch & pen) ---
+        let fillDragState = null;
+        const FILL_DRAG_THRESHOLD = 6; // px of movement before a tap becomes a drag
+
+        window.fillChipPointerDown = (e, chipEl, idx) => {
+            e.preventDefault();
+            const opt = chipEl.getAttribute('data-option');
+            fillDragState = { idx, opt, chipEl, startX: e.clientX, startY: e.clientY, moved: false, ghostEl: null, pointerId: e.pointerId };
+            try { chipEl.setPointerCapture(e.pointerId); } catch (err) {}
+            chipEl.addEventListener('pointermove', window.fillChipPointerMove);
+            chipEl.addEventListener('pointerup', window.fillChipPointerUp);
+            chipEl.addEventListener('pointercancel', window.fillChipPointerUp);
+        };
+
+        window.fillChipPointerMove = (e) => {
+            if (!fillDragState) return;
+            const dx = e.clientX - fillDragState.startX;
+            const dy = e.clientY - fillDragState.startY;
+
+            if (!fillDragState.moved && Math.sqrt(dx * dx + dy * dy) > FILL_DRAG_THRESHOLD) {
+                fillDragState.moved = true;
+                const ghost = fillDragState.chipEl.cloneNode(true);
+                ghost.style.position = 'fixed';
+                ghost.style.zIndex = '9999';
+                ghost.style.pointerEvents = 'none';
+                ghost.style.opacity = '0.92';
+                ghost.style.transform = 'scale(1.08) rotate(-2deg)';
+                ghost.style.boxShadow = '0 10px 24px rgba(0,0,0,0.3)';
+                ghost.style.width = fillDragState.chipEl.offsetWidth + 'px';
+                ghost.style.cursor = 'grabbing';
+                document.body.appendChild(ghost);
+                fillDragState.ghostEl = ghost;
+                fillDragState.chipEl.style.opacity = '0.35';
+                fillDragState.chipEl.style.cursor = 'grabbing';
+            }
+
+            if (fillDragState.moved && fillDragState.ghostEl) {
+                fillDragState.ghostEl.style.left = (e.clientX - fillDragState.ghostEl.offsetWidth / 2) + 'px';
+                fillDragState.ghostEl.style.top = (e.clientY - fillDragState.ghostEl.offsetHeight / 2) + 'px';
+
+                const dropZone = document.getElementById('fill-dropzone');
+                if (dropZone) {
+                    const r = dropZone.getBoundingClientRect();
+                    const over = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+                    dropZone.style.outline = over ? '3px solid #10b981' : '';
+                    dropZone.style.transform = over ? 'scale(1.03)' : 'scale(1)';
                 }
-            }, 400);
+            }
         };
 
-        // Keep drag handlers so desktop drag still works as a bonus
-        let draggedOption = null;
+        window.fillChipPointerUp = (e) => {
+            if (!fillDragState) return;
+            const { idx, opt, chipEl, moved, ghostEl, pointerId } = fillDragState;
 
-        window.fillOptionStart = (e) => {
-            draggedOption = e.target.getAttribute('data-option');
-            if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
-        };
+            chipEl.removeEventListener('pointermove', window.fillChipPointerMove);
+            chipEl.removeEventListener('pointerup', window.fillChipPointerUp);
+            chipEl.removeEventListener('pointercancel', window.fillChipPointerUp);
+            try { chipEl.releasePointerCapture(pointerId); } catch (err) {}
 
-        window.fillOptionEnd = () => { draggedOption = null; };
+            if (ghostEl) ghostEl.remove();
+            chipEl.style.opacity = '';
+            chipEl.style.cursor = 'grab';
 
-        window.fillZoneOver = (e) => {
-            e.preventDefault();
-            if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
-        };
+            if (moved) {
+                const dropZone = document.getElementById('fill-dropzone');
+                let dropped = false;
+                if (dropZone) {
+                    const r = dropZone.getBoundingClientRect();
+                    dropped = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+                    dropZone.style.outline = '';
+                    dropZone.style.transform = '';
+                }
+                if (dropped) {
+                    activeSession.userAnswers[idx] = opt;
+                    saveProgress();
+                    renderActiveQuestion();
+                }
+                // Dropped outside the zone — the chip simply snaps back, nothing changes.
+            } else {
+                // No real movement — treat as a tap/click selection.
+                window.fillTapSelect(opt, idx);
+            }
 
-        window.fillZoneLeave = () => {};
-
-        window.fillZoneDrop = (e, idx) => {
-            e.preventDefault();
-            if (!draggedOption) return;
-            window.fillTapSelect(draggedOption, idx);
-            draggedOption = null;
+            fillDragState = null;
         };
 
         window.clearFillAnswer = (idx) => {
