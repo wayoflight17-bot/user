@@ -2589,13 +2589,11 @@
                 examState.streak += 1;
                 examState.correct += 1;
 
-                // Silent feedback - no message shown
+                // Silent feedback
                 feedbackEl.className = '';
                 feedbackText.innerHTML = '';
                 correctDisplay.innerHTML = '';
                 feedbackEl.classList.add('hidden-view');
-
-                confetti();
             } else {
                 examState.streak = 0;
 
@@ -2769,45 +2767,33 @@
                     return;
                 }
 
-                // Question display
+                // Question display — tap-to-select (works on mobile AND desktop)
                 container.innerHTML = `
-                    <div style="display:flex;flex-direction:column;gap:20px;">
-                        <!-- Question -->
-                        <div style="padding:20px;background:#eff6ff;border:2px solid #0284c7;border-radius:12px;font-size:16px;font-weight:bold;line-height:1.8;color:#0c4a6e;min-height:60px;display:flex;align-items:center;">
-                            ${qData.q}
+                    <div style="display:flex;flex-direction:column;gap:16px;">
+                        <!-- Answer display zone -->
+                        <div style="padding:16px 20px;background:${userAnswer ? '#dcfce7' : '#dbeafe'};border:2px solid ${userAnswer ? '#22c55e' : '#2563eb'};border-radius:12px;text-align:center;min-height:60px;display:flex;align-items:center;justify-content:center;font-weight:bold;color:${userAnswer ? '#15803d' : '#1e40af'};font-size:15px;transition:all 0.25s;">
+                            ${userAnswer ? `✅ <strong style="margin-left:6px;">${userAnswer}</strong>` : '👆 Tap an answer below'}
                         </div>
 
-                        <!-- Draggable options -->
-                        <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:20px;background:#f8fafc;border:2px dashed #94a3b8;border-radius:12px;min-height:80px;align-items:flex-start;">
-                            ${options.map((opt, i) => {
+                        <!-- Tap-to-select options -->
+                        <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:16px;background:#f8fafc;border:2px dashed #94a3b8;border-radius:12px;">
+                            ${options.map((opt) => {
                                 const isSelected = userAnswer === opt;
                                 return `
-                                <div class="fill-option"
-                                     draggable="true"
-                                     data-option="${opt}"
-                                     ondragstart="window.fillOptionStart(event)"
-                                     ondragend="window.fillOptionEnd(event)"
-                                     style="padding:12px 20px;background:${isSelected ? '#10b981' : '#3b82f6'};color:white;border-radius:10px;font-weight:bold;font-size:14px;cursor:grab;user-select:none;transition:all 0.2s;box-shadow:0 2px 6px rgba(0,0,0,0.15);" 
-                                     onmouseover="this.style.transform='scale(1.05)'" 
-                                     onmouseout="this.style.transform='scale(1)'">
+                                <button
+                                    onclick="window.fillTapSelect('${opt.replace(/'/g, "\\'")}', ${idx})"
+                                    style="padding:12px 20px;background:${isSelected ? '#10b981' : '#3b82f6'};color:white;border:none;border-radius:10px;font-weight:bold;font-size:14px;cursor:pointer;user-select:none;transition:all 0.18s;box-shadow:${isSelected ? '0 0 0 3px rgba(16,185,129,0.35)' : '0 2px 6px rgba(0,0,0,0.15)'};transform:${isSelected ? 'scale(1.05)' : 'scale(1)'};"
+                                    onmouseover="this.style.opacity='0.85'"
+                                    onmouseout="this.style.opacity='1'">
                                     ${opt}
-                                </div>`;
+                                </button>`;
                             }).join('')}
-                        </div>
-
-                        <!-- Drop zone -->
-                        <div id="fill-drop-zone"
-                             style="padding:20px;background:#dbeafe;border:3px dashed #2563eb;border-radius:12px;text-align:center;min-height:80px;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#1e40af;font-size:14px;"
-                             ondragover="window.fillZoneOver(event)"
-                             ondrop="window.fillZoneDrop(event, ${idx})"
-                             ondragleave="window.fillZoneLeave(event)">
-                            ${userAnswer ? `✅ <strong>${userAnswer}</strong>` : '📌 Drag your answer here'}
                         </div>
 
                         ${userAnswer ? `
                         <div style="text-align:center;">
-                            <button onclick="window.clearFillAnswer(${idx})" style="padding:8px 16px;background:#ef4444;color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:13px;">
-                                Clear Answer
+                            <button onclick="window.clearFillAnswer(${idx})" style="padding:8px 18px;background:#ef4444;color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:13px;">
+                                ✕ Clear Answer
                             </button>
                         </div>` : ''}
                     </div>
@@ -2994,7 +2980,6 @@
                 examState.totalXP += 10;
                 examState.streak += 1;
                 examState.correct += 1;
-                confetti();
             } else {
                 examState.streak = 0;
             }
@@ -3134,63 +3119,16 @@
         };
 
         const showAchievementPopup = (testTitle, score, newRank, levelObj, isPromoted, totalPossible = 0, wasCheating = false) => {
-            document.getElementById('achieve-name').innerText = userData.name;
-            document.getElementById('achieve-avatar').src = userData.avatar || AVATARS[0];
-            document.getElementById('achieve-test-name').innerText = testTitle;
-            document.getElementById('achieve-score').innerText = `${score} XP`;
-            document.getElementById('achieve-rank').innerText = `#${newRank}`;
-            document.getElementById('achieve-level').innerText = levelObj.title;
+            // No popup — show a brief toast and navigate straight to dashboard
+            const g = totalPossible > 0 ? getLetterGrade(score, totalPossible) : null;
+            const gradeStr = g ? ` · Grade ${g.letter}` : '';
+            const cheatStr = wasCheating ? ' ⚑ Flagged' : '';
+            showToast(`✅ ${testTitle} — ${score} XP · #${newRank}${gradeStr}${cheatStr}`, g ? g.letter : '🎉');
 
-            // Cheating flag banner
-            const cheatBanner = document.getElementById('achieve-cheat-banner');
-            if (cheatBanner) {
-                if (wasCheating) {
-                    cheatBanner.classList.remove('hidden-view');
-                } else {
-                    cheatBanner.classList.add('hidden-view');
-                }
-            }
-
-            // Enrollment ID on popup
-            const achEid = document.getElementById('achieve-student-id');
-            if(achEid) achEid.innerText = userData.enrollmentId ? `ID: ${userData.enrollmentId}` : '';
-            const achUsername = document.getElementById('achieve-username');
-            if(achUsername) achUsername.innerText = userData.username ? `@${userData.username}` : '';
-
-            // Grade badge
-            const gradeEl = document.getElementById('achieve-grade');
-            if(gradeEl && totalPossible > 0) {
-                const g = getLetterGrade(score, totalPossible);
-                gradeEl.className = `inline-block px-4 py-1.5 rounded-full text-base font-black tracking-widest shadow-lg ${g.cls}`;
-                gradeEl.innerText = `Grade: ${g.letter} — ${g.label}`;
-            } else if(gradeEl) {
-                gradeEl.className = 'hidden';
-            }
-
-            const setupSocial = (prefix, id, val) => {
-                const el = document.getElementById(id);
-                if (val) {
-                    el.classList.remove('hidden');
-                    el.classList.add('flex');
-                    document.getElementById(id + '-txt').innerText = val;
-                } else {
-                    el.classList.add('hidden');
-                    el.classList.remove('flex');
-                }
-            };
-            setupSocial('insta', 'popup-insta', globalData.config.socialInsta);
-            setupSocial('yt', 'popup-yt', globalData.config.socialYt);
-            setupSocial('x', 'popup-x', globalData.config.socialX);
-
-            const card = document.getElementById('share-card');
-            card.className = `share-card-wrapper p-10 text-white text-center relative overflow-hidden ${levelObj.class}`;
-            
-            const badge = document.getElementById('promotion-badge');
-            if(isPromoted) badge.classList.remove('hidden-view');
-            else badge.classList.add('hidden-view');
-
-            document.getElementById('modal-overlay').classList.remove('hidden-view');
-            document.getElementById('modal-achievement').classList.remove('hidden-view');
+            // Restore nav bar and return to dashboard
+            const navUser = document.getElementById('nav-user');
+            if (navUser) navUser.style.display = 'flex';
+            window.switchView('view-dashboard');
         };
 
         window.viewPastResult = (resultId) => {
@@ -4215,54 +4153,50 @@
             setTimeout(initCarouselTouch, 400);
         };
 
-        // ===== FILL IN THE BLANKS - SIMPLE DRAG DROP =====
+        // ===== FILL IN THE BLANKS — TAP TO SELECT (works on mobile & desktop) =====
+        // Tap any option button to select it as the answer
+        window.fillTapSelect = (opt, idx) => {
+            // Toggle off if already selected
+            if (activeSession.userAnswers[idx] === opt) {
+                activeSession.userAnswers[idx] = '';
+            } else {
+                activeSession.userAnswers[idx] = opt;
+            }
+            saveProgress();
+            renderActiveQuestion();
+
+            // Auto-validate after short delay
+            setTimeout(() => {
+                const ans = activeSession.userAnswers[idx];
+                const qData = activeSession.questions[idx];
+                if (ans && ans === qData.correct) {
+                    window.pickAnswer(ans, 'fill');
+                }
+            }, 400);
+        };
+
+        // Keep drag handlers so desktop drag still works as a bonus
         let draggedOption = null;
 
         window.fillOptionStart = (e) => {
             draggedOption = e.target.getAttribute('data-option');
-            e.dataTransfer.effectAllowed = 'move';
-            e.target.style.opacity = '0.6';
-            e.target.style.cursor = 'grabbing';
+            if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
         };
 
-        window.fillOptionEnd = (e) => {
-            e.target.style.opacity = '1';
-            e.target.style.cursor = 'grab';
-        };
+        window.fillOptionEnd = () => { draggedOption = null; };
 
         window.fillZoneOver = (e) => {
             e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            e.target.style.background = '#bfdbfe';
-            e.target.style.borderColor = '#1d4ed8';
-            e.target.style.transform = 'scale(1.02)';
+            if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
         };
 
-        window.fillZoneLeave = (e) => {
-            if (e.target.id === 'fill-drop-zone') {
-                e.target.style.background = '#dbeafe';
-                e.target.style.borderColor = '#2563eb';
-                e.target.style.transform = 'scale(1)';
-            }
-        };
+        window.fillZoneLeave = () => {};
 
         window.fillZoneDrop = (e, idx) => {
             e.preventDefault();
-            e.stopPropagation();
-            
             if (!draggedOption) return;
-            
-            activeSession.userAnswers[idx] = draggedOption;
-            saveProgress();
-            renderActiveQuestion();
-            
-            // Auto-validate
-            setTimeout(() => {
-                const qData = activeSession.questions[idx];
-                if (draggedOption === qData.correct) {
-                    window.pickAnswer(draggedOption, 'fill');
-                }
-            }, 500);
+            window.fillTapSelect(draggedOption, idx);
+            draggedOption = null;
         };
 
         window.clearFillAnswer = (idx) => {
