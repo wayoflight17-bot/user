@@ -2660,7 +2660,11 @@
                     title: quizTemplate.title,
                     questions: quizTemplate.questions.map(q => {
                         const mapped = {...q};
-                        if(q.type === 'match') mapped.shuffledValues = Object.values(q.pairs).sort(() => Math.random() - 0.5);
+                        if(q.type === 'match') {
+                            // Shuffle BOTH left keys and right values independently
+                            mapped.shuffledLeft  = Object.keys(q.pairs).sort(() => Math.random() - 0.5);
+                            mapped.shuffledRight = Object.values(q.pairs).sort(() => Math.random() - 0.5);
+                        }
                         if(q.type === 'fill' && Array.isArray(q.options) && q.options.length > 0) {
                             mapped.options = [...q.options].sort(() => Math.random() - 0.5);
                         }
@@ -2831,8 +2835,9 @@
                 // Match the following - Duolingo style (click to pair)
                 const userAnswers = activeSession.userAnswers[idx] || {};
                 const pairs = qData.pairs || {}; // { left: right }
-                const leftItems = Object.keys(pairs);
-                const rightItems = qData.shuffledRight || Object.values(pairs).sort();
+                // Use pre-shuffled orderings (both columns independently randomized)
+                const leftItems  = qData.shuffledLeft  || Object.keys(pairs).sort(() => Math.random() - 0.5);
+                const rightItems = qData.shuffledRight || Object.values(pairs).sort(() => Math.random() - 0.5);
                 
                 const colors = [
                     { bg: '#FEE2E2', text: '#B91C1C', border: '#DC2626' }, // red
@@ -2845,49 +2850,98 @@
                     { bg: '#F3E8FF', text: '#5B21B6', border: '#9333EA' }  // violet
                 ];
 
+                // Use original leftItems (from pairs keys) for color indexing so colors stay stable
+                const origLeftOrder = Object.keys(pairs);
+
+                const isMobile = window.innerWidth < 500;
+                const btnPad   = isMobile ? '8px 8px'  : '12px 16px';
+                const btnFSize = isMobile ? '12px'     : '14px';
+                const colGap   = isMobile ? '12px'     : '20px';
+                const itemGap  = isMobile ? '8px'      : '10px';
+
                 container.innerHTML = `
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;margin:20px 0;position:relative;">
+                    <style>
+                        .match-grid-wrap {
+                            display: grid;
+                            grid-template-columns: 1fr 1fr;
+                            gap: ${colGap};
+                            margin: 16px 0;
+                            position: relative;
+                        }
+                        .match-col { display:flex; flex-direction:column; gap:${itemGap}; position:relative; z-index:10; }
+                        .match-btn {
+                            width: 100%;
+                            text-align: left;
+                            border-radius: 10px;
+                            font-weight: bold;
+                            cursor: pointer;
+                            transition: all 0.2s;
+                            user-select: none;
+                            word-break: break-word;
+                            line-height: 1.3;
+                            padding: ${btnPad};
+                            font-size: ${btnFSize};
+                            border-width: 2px;
+                            border-style: solid;
+                        }
+                        .match-btn:active { transform: scale(0.97); }
+                        @media (max-width: 400px) {
+                            .match-grid-wrap { gap: 8px; }
+                            .match-btn { font-size: 11px; padding: 7px 7px; }
+                        }
+                    </style>
+                    <div class="match-grid-wrap">
                         <!-- Canvas for lines -->
                         <canvas id="match-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
 
-                        <!-- Left column -->
-                        <div style="display:flex;flex-direction:column;gap:10px;position:relative;z-index:10;">
-                            ${leftItems.map((item, idx) => {
+                        <!-- Left column (shuffled) -->
+                        <div class="match-col">
+                            ${leftItems.map((item, i) => {
                                 const paired = userAnswers[item];
-                                const color = paired ? colors[idx % colors.length] : null;
+                                const colorIdx = origLeftOrder.indexOf(item);
+                                const color = paired ? colors[colorIdx % colors.length] : null;
+                                const isSelected = matchFirstSelected && matchFirstSelected.item === item && matchFirstSelected.side === 'left';
+                                const borderColor = isSelected ? '#6366f1' : (color ? color.border : '#cbd5e1');
+                                const bgColor     = isSelected ? '#eef2ff' : (color ? color.bg     : '#f8fafc');
+                                const textColor   = isSelected ? '#4f46e5' : (color ? color.text   : '#374151');
                                 return `
                                 <button onclick="window.matchSelectLeft('${item.replace(/'/g, "\\'")}')"
-                                    id="left-${idx}"
-                                    class="match-item left"
+                                    class="match-btn match-item left"
                                     data-item="${item}"
-                                    style="padding:12px 16px;text-align:left;border:2px solid ${color ? color.border : '#cbd5e1'};background:${color ? color.bg : '#f8fafc'};color:${color ? color.text : '#374151'};border-radius:12px;font-weight:bold;font-size:14px;cursor:pointer;transition:all 0.2s;user-select:none;">
+                                    style="border-color:${borderColor};background:${bgColor};color:${textColor};${isSelected ? 'box-shadow:0 0 0 3px rgba(99,102,241,0.25);' : ''}">
                                     ${item}
                                 </button>`;
                             }).join('')}
                         </div>
 
-                        <!-- Right column -->
-                        <div style="display:flex;flex-direction:column;gap:10px;position:relative;z-index:10;">
-                            ${rightItems.map((item, idx) => {
-                                const leftKey = Object.keys(userAnswers).find(k => userAnswers[k] === item);
-                                const color = leftKey ? colors[leftItems.indexOf(leftKey) % colors.length] : null;
+                        <!-- Right column (shuffled independently) -->
+                        <div class="match-col">
+                            ${rightItems.map((item, i) => {
+                                const leftKey    = Object.keys(userAnswers).find(k => userAnswers[k] === item);
+                                const colorIdx   = leftKey ? origLeftOrder.indexOf(leftKey) : -1;
+                                const color      = colorIdx >= 0 ? colors[colorIdx % colors.length] : null;
+                                const isSelected = matchFirstSelected && matchFirstSelected.item === item && matchFirstSelected.side === 'right';
+                                const borderColor = isSelected ? '#6366f1' : (color ? color.border : '#cbd5e1');
+                                const bgColor     = isSelected ? '#eef2ff' : (color ? color.bg     : '#f8fafc');
+                                const textColor   = isSelected ? '#4f46e5' : (color ? color.text   : '#374151');
                                 return `
                                 <button onclick="window.matchSelectRight('${item.replace(/'/g, "\\'")}')"
-                                    id="right-${idx}"
-                                    class="match-item right"
+                                    class="match-btn match-item right"
                                     data-item="${item}"
-                                    style="padding:12px 16px;text-align:left;border:2px solid ${color ? color.border : '#cbd5e1'};background:${color ? color.bg : '#f8fafc'};color:${color ? color.text : '#374151'};border-radius:12px;font-weight:bold;font-size:14px;cursor:pointer;transition:all 0.2s;user-select:none;">
+                                    style="border-color:${borderColor};background:${bgColor};color:${textColor};${isSelected ? 'box-shadow:0 0 0 3px rgba(99,102,241,0.25);' : ''}">
                                     ${item}
                                 </button>`;
                             }).join('')}
                         </div>
                     </div>
 
-                    <div style="text-align:center;margin-top:16px;font-size:12px;color:#64748b;font-weight:500;">Click left item, then right item to pair. Click again to unpair.</div>
+                    <div style="text-align:center;margin-top:12px;font-size:11px;color:#64748b;font-weight:600;letter-spacing:0.02em;">
+                        Tap a left item, then a right item to pair · Tap again to unselect
+                    </div>
                 `;
 
-                // Draw connection lines
-                setTimeout(() => window.matchDrawLines(idx, pairs, userAnswers, colors), 200);
+                // Draw connection lines after layout settles
+                setTimeout(() => window.matchDrawLines(idx, pairs, userAnswers, colors), 250);
             }
 
             document.getElementById('btn-prev').disabled = idx === 0;
