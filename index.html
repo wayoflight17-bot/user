@@ -257,7 +257,7 @@
         /* Mobile: fixed bottom tab bar */
         .app-bottombar {
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
-            background: rgba(255,255,255,0.97); backdrop-filter: blur(12px);
+            background: rgba(255,255,255,0.98);
             border-top: 1px solid #e2e8f0;
             display: flex; align-items: stretch; justify-content: space-around;
             height: var(--bottombar-h);
@@ -343,7 +343,7 @@
 <body class="text-slate-900 pb-12">
 
     <!-- Top bar: logo + avatar only. Tabs live in the sidebar (desktop) / bottom bar (mobile) below. -->
-    <nav id="app-topbar" class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <nav id="app-topbar" class="sticky top-0 z-40 bg-white/95 border-b border-slate-200 shadow-sm">
         <div class="max-w-7xl mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 cursor-pointer shrink-0" onclick="window.switchView('view-dashboard')">
                 <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200 overflow-hidden relative shrink-0">
@@ -1901,11 +1901,14 @@
                 topbar?.classList.remove('app-topbar-offset');
             }
 
-            // The heavy list-building work below is deferred a frame so the tab
-            // highlight + view swap above gets painted first — on phones, doing it
-            // all synchronously makes the tap feel like it froze for a moment before
-            // anything visibly happens.
-            requestAnimationFrame(() => {
+            // The heavy list-building work below is deferred so the tab highlight +
+            // view swap above actually gets painted to the screen first. Note this is
+            // setTimeout, not requestAnimationFrame — rAF callbacks run BEFORE the
+            // browser paints that frame, so they don't actually let the tap's visual
+            // feedback show up before heavy work runs. setTimeout(fn, 0) queues this
+            // as a separate macrotask after the pending paint, which is what actually
+            // makes the tap feel instant on phones.
+            setTimeout(() => {
                 // Render people when switching to people view
                 if (id === 'view-people') {
                     window.renderPeople();
@@ -1925,7 +1928,7 @@
                     testSelectedSeasonId = null;
                     window.renderTestView();
                 }
-            });
+            }, 0);
         };
 
         const showToast = (msg, icon = '✅') => {
@@ -2698,7 +2701,7 @@
                         <div class="flex items-center justify-between p-3 rounded-2xl border transition-all ${style}">
                             <div class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onclick="window.openProfileView('${u.id}', 'leaderboard')">
                                 <div class="w-8 text-center text-lg shrink-0">${rankDisplay}</div>
-                                <img src="${u.avatar}" class="w-10 h-10 rounded-full border-2 border-white shadow-sm bg-white object-cover shrink-0">
+                                <img src="${u.avatar}" loading="lazy" decoding="async" class="w-10 h-10 rounded-full border-2 border-white shadow-sm bg-white object-cover shrink-0">
                                 <div class="flex flex-col min-w-0">
                                     <span class="text-sm truncate max-w-[80px] font-bold ${isMe ? 'text-indigo-600' : ''}">${isMe ? 'You' : u.name}</span>
                                     ${lbEid ? `<span class="text-[9px] font-mono text-slate-400 font-bold">${lbEid}</span>` : ''}
@@ -3829,17 +3832,22 @@
             empty?.classList.add('hidden-view');
 
             const lb = getLeaderboard(false);
+            // getLeaderboard() already computed each user's total XP and rank in one pass —
+            // reusing it via O(1) lookups instead of re-scanning globalData.results and
+            // re-searching `lb` for every single card (which was O(n²) for the whole grid).
+            const xpByUid = new Map(lb.map(l => [l.id, l.xp]));
+            const rankByUid = new Map(lb.map((l, i) => [l.id, i]));
 
             grid.innerHTML = filtered.map(u => {
                 const isFollowing = myFollowing.has(u.uid);
-                const userXp = globalData.results.filter(r => r.studentId === u.uid).reduce((s, r) => s + r.score, 0);
+                const userXp = xpByUid.get(u.uid) || 0;
                 const rankData = getRankData(userXp);
-                const lbRank = lb.findIndex(l => l.id === u.uid);
+                const lbRank = rankByUid.has(u.uid) ? rankByUid.get(u.uid) : -1;
                 const rankDisplay = lbRank >= 0 ? `#${lbRank + 1}` : '--';
                 return `
                 <div class="people-card" onclick="window.openProfileView('${u.uid}', 'people')">
                     <div class="relative">
-                        <img src="${u.avatar || AVATARS[0]}" class="w-20 h-20 rounded-full border-4 border-slate-100 shadow-md object-cover bg-slate-50">
+                        <img src="${u.avatar || AVATARS[0]}" loading="lazy" decoding="async" class="w-20 h-20 rounded-full border-4 border-slate-100 shadow-md object-cover bg-slate-50">
                         <div class="absolute -bottom-1 -right-1 text-sm bg-white rounded-full border border-slate-100 shadow px-1.5 py-0.5 font-black text-slate-600">${rankDisplay}</div>
                     </div>
                     <div class="w-full">
@@ -3922,7 +3930,7 @@
                 document.getElementById(v)?.classList.add('hidden-view');
             });
             document.getElementById('view-profile').classList.remove('hidden-view');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo(0, 0);
         };
 
         window.goBackFromProfile = () => {
@@ -4018,7 +4026,7 @@
                 return `
                 <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100 cursor-pointer hover:bg-indigo-50 hover:border-indigo-100 transition-colors" onclick="window.closeSocialModal(); window.openProfileView('${u.uid}', 'dashboard')">
                     <div class="flex items-center gap-3 min-w-0">
-                        <img src="${u.avatar || AVATARS[0]}" class="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover shrink-0">
+                        <img src="${u.avatar || AVATARS[0]}" loading="lazy" decoding="async" class="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover shrink-0">
                         <div class="min-w-0">
                             <p class="font-bold text-slate-800 text-sm truncate">${u.name || 'Student'}</p>
                             <p class="text-[10px] font-bold text-indigo-400 truncate">${u.username ? '@' + u.username : (u.enrollmentId || '')}</p>
@@ -4089,7 +4097,7 @@
                 return `
                 <div class="flex items-center justify-between p-3 bg-white rounded-2xl border border-slate-100 cursor-pointer hover:border-indigo-200 transition-colors" onclick="window.closeSocialModal(); window.openProfileView('${s.uid}', 'dashboard')">
                     <div class="flex items-center gap-3 min-w-0">
-                        <img src="${u.avatar || AVATARS[0]}" class="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover shrink-0">
+                        <img src="${u.avatar || AVATARS[0]}" loading="lazy" decoding="async" class="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover shrink-0">
                         <div class="min-w-0">
                             <p class="font-bold text-slate-800 text-sm truncate">${u.name || 'Student'}</p>
                             <p class="text-[10px] font-semibold text-slate-400 truncate">${viaText}</p>
@@ -4748,7 +4756,7 @@
             const searchInput = document.getElementById('study-search');
             if (searchInput) searchInput.value = '';
             window.renderStudyView();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo(0, 0);
         };
 
         window.backToSeasonList = () => {
@@ -4757,7 +4765,7 @@
             const searchInput = document.getElementById('study-search');
             if (searchInput) searchInput.value = '';
             window.renderStudyView();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo(0, 0);
         };
 
         window.filterStudyView = () => window.renderStudyView();
@@ -4919,13 +4927,13 @@
         window.openTestSeasonDetail = (id) => {
             testSelectedSeasonId = id;
             window.renderTestView();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo(0, 0);
         };
 
         window.backToTestSeasonList = () => {
             testSelectedSeasonId = null;
             window.renderTestView();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo(0, 0);
         };
 
         // ── Video Card ────────────────────────────────────────────────────────
