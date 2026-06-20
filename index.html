@@ -282,6 +282,10 @@
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                         <span class="hidden xs:inline">Home</span>
                     </button>
+                    <button onclick="window.switchView('view-test')" id="nav-tab-test" class="nav-tab">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                        <span>Test</span>
+                    </button>
                     <button onclick="window.switchView('view-study')" id="nav-tab-study" class="nav-tab">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
                         <span>Study</span>
@@ -508,15 +512,24 @@
             <!-- Main Content Area -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 <div class="lg:col-span-8 space-y-6">
-                    <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                        <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
-                            <span class="w-3 h-3 bg-indigo-500 rounded-full animate-pulse"></span> Challenge Arena
-                        </h3>
-                        <span class="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full" id="quiz-count-label">0 Available</span>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+                                <span class="w-3 h-3 bg-indigo-500 rounded-full animate-pulse"></span> <span id="home-active-season-label">Active Season</span>
+                            </h3>
+                            <span class="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full" id="quiz-count-label">0 Available</span>
+                        </div>
+                        <div class="flex bg-slate-100 rounded-xl p-1">
+                            <button onclick="window.setHomeTab('test')" id="home-tab-test" class="flex-1 text-xs font-bold py-2 rounded-lg bg-indigo-600 text-white shadow-sm transition-all">📝 Test</button>
+                            <button onclick="window.setHomeTab('material')" id="home-tab-material" class="flex-1 text-xs font-bold py-2 rounded-lg text-slate-500 hover:text-slate-800 transition-all">📚 Study Material</button>
+                        </div>
                     </div>
-                    
+
                     <div id="quiz-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <!-- Quizzes injected via JS -->
+                    </div>
+                    <div id="home-material-grid" class="hidden space-y-4">
+                        <!-- Active season's study material injected via JS -->
                     </div>
                 </div>
 
@@ -757,7 +770,7 @@
                     <div class="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center text-xl">📚</div>
                     <div>
                         <h2 class="text-2xl font-black text-white tracking-tight" id="study-hero-title">Study Zone</h2>
-                        <p class="text-indigo-200 text-xs font-semibold" id="study-hero-subtitle">All your exam prep in one place</p>
+                        <p class="text-indigo-200 text-xs font-semibold" id="study-hero-subtitle">All your study material in one place</p>
                     </div>
                 </div>
                 <!-- Active season banner inside hero -->
@@ -791,6 +804,54 @@
                 <div class="text-6xl mb-4">📖</div>
                 <p class="font-black text-slate-600 text-lg" id="study-empty-title">No study material yet</p>
                 <p class="text-sm text-slate-400 mt-2 font-medium" id="study-empty-subtitle">Your teacher will publish Instagram posts and YouTube videos here for you to study.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TEST VIEW ===== -->
+    <div id="view-test" class="hidden-view fade-in pb-16">
+
+        <!-- Hero header -->
+        <div style="background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#4c1d95 100%)" class="px-4 pt-10 pb-16 mb-0 relative overflow-hidden">
+            <div style="position:absolute;top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,0.04);pointer-events:none"></div>
+            <div style="position:absolute;bottom:-40px;left:-40px;width:160px;height:160px;border-radius:50%;background:rgba(99,102,241,0.12);pointer-events:none"></div>
+            <div class="max-w-3xl mx-auto relative z-10">
+                <div class="flex items-center gap-3 mb-3">
+                    <div id="test-back-btn-wrap" class="hidden">
+                        <button onclick="window.backToTestSeasonList()" class="flex items-center gap-1.5 px-3 py-2 -ml-1 mb-2 bg-white/10 hover:bg-white/20 backdrop-blur rounded-xl text-white text-xs font-black transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                            All Seasons
+                        </button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center text-xl">📝</div>
+                    <div>
+                        <h2 class="text-2xl font-black text-white tracking-tight" id="test-hero-title">Test Zone</h2>
+                        <p class="text-indigo-200 text-xs font-semibold" id="test-hero-subtitle">All your challenges in one place</p>
+                    </div>
+                </div>
+                <!-- Active season banner inside hero -->
+                <div id="test-active-season-banner" class="hidden mt-4 flex items-center gap-3 bg-white/10 backdrop-blur border border-white/20 rounded-2xl px-4 py-3">
+                    <span class="text-xl">🏆</span>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-white font-black text-sm" id="test-banner-name">Season</div>
+                        <div class="text-indigo-200 text-xs font-bold" id="test-banner-dates"></div>
+                    </div>
+                    <span class="px-2.5 py-1 bg-emerald-400/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-black rounded-full uppercase tracking-wide">Active</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="max-w-3xl mx-auto px-4 -mt-5 relative z-20 space-y-10 pt-5" id="test-content-grid"></div>
+
+        <!-- Empty state -->
+        <div id="test-empty" class="hidden max-w-3xl mx-auto px-4 mt-8">
+            <div class="text-center py-20 bg-white rounded-3xl border border-slate-200 shadow-sm">
+                <div class="text-6xl mb-4">📝</div>
+                <p class="font-black text-slate-600 text-lg" id="test-empty-title">No tests yet</p>
+                <p class="text-sm text-slate-400 mt-2 font-medium" id="test-empty-subtitle">Your teacher will publish tests here for you to attempt.</p>
             </div>
         </div>
     </div>
@@ -1319,6 +1380,7 @@
         let unsubscribes = [];
         let tempPendingQuizId = null; 
         let currentLbTab = 'alltime'; 
+        let homeActiveTab = 'test';
 
         let MASTER_QUIZZES = [];
 
@@ -1642,7 +1704,7 @@
                 return;
             }
             
-            ['view-auth', 'view-onboarding', 'view-dashboard', 'view-exam', 'view-review', 'view-people', 'view-profile', 'view-certificates', 'view-study'].forEach(v => {
+            ['view-auth', 'view-onboarding', 'view-dashboard', 'view-exam', 'view-review', 'view-people', 'view-profile', 'view-certificates', 'view-study', 'view-test'].forEach(v => {
                 const el = document.getElementById(v);
                 if(el) el.classList.add('hidden-view');
             });
@@ -1653,7 +1715,7 @@
             }
 
             // Update nav tabs
-            ['dashboard', 'people', 'certificates', 'study'].forEach(tab => {
+            ['dashboard', 'people', 'certificates', 'study', 'test'].forEach(tab => {
                 const navTab = document.getElementById(`nav-tab-${tab}`);
                 if (navTab) {
                     navTab.className = id === `view-${tab}` ? 'nav-tab active' : 'nav-tab';
@@ -1682,6 +1744,11 @@
                 studySelectedSeasonId = null;
                 studyFilterActive = 'all';
                 window.renderStudyView();
+            }
+            // Render test content — always start at the season list when (re)entering the tab
+            if (id === 'view-test') {
+                testSelectedSeasonId = null;
+                window.renderTestView();
             }
         };
 
@@ -2115,6 +2182,9 @@
                 if (!document.getElementById('view-study').classList.contains('hidden-view')) {
                     window.renderStudyView();
                 }
+                if (!document.getElementById('view-test').classList.contains('hidden-view')) {
+                    window.renderTestView();
+                }
             }));
             
             unsubscribes.push(onSnapshot(getPublicCol('exam_seasons'), snapshot => {
@@ -2122,6 +2192,9 @@
                 renderDashboard();
                 if (!document.getElementById('view-study').classList.contains('hidden-view')) {
                     window.renderStudyView();
+                }
+                if (!document.getElementById('view-test').classList.contains('hidden-view')) {
+                    window.renderTestView();
                 }
                 // Show winner popup once per announcement
                 if (userData) checkAndShowWinnerPopup();
@@ -2142,6 +2215,9 @@
                 globalData.studyContent = snapshot.empty ? [] : snapshot.docs.map(d => ({id: d.id, ...d.data()}));
                 if (!document.getElementById('view-study').classList.contains('hidden-view')) {
                     window.renderStudyView();
+                }
+                if (!document.getElementById('view-dashboard').classList.contains('hidden-view')) {
+                    renderHomeMaterialGrid(getActiveSeason());
                 }
             }));
         };
@@ -2255,6 +2331,56 @@
                     `}
                 </div>
             </div>`;
+        };
+
+        // --- Home tab's Test / Study Material sub-tab toggle ---
+        window.setHomeTab = (tab) => {
+            homeActiveTab = tab;
+            const testBtn = document.getElementById('home-tab-test');
+            const materialBtn = document.getElementById('home-tab-material');
+            const quizGrid = document.getElementById('quiz-grid');
+            const materialGrid = document.getElementById('home-material-grid');
+            const countLabel = document.getElementById('quiz-count-label');
+            const activeCls = 'flex-1 text-xs font-bold py-2 rounded-lg bg-indigo-600 text-white shadow-sm transition-all';
+            const inactiveCls = 'flex-1 text-xs font-bold py-2 rounded-lg text-slate-500 hover:text-slate-800 transition-all';
+            if (tab === 'test') {
+                testBtn.className = activeCls;
+                materialBtn.className = inactiveCls;
+                quizGrid.classList.remove('hidden');
+                materialGrid.classList.add('hidden');
+                if (countLabel) countLabel.classList.remove('hidden');
+            } else {
+                materialBtn.className = activeCls;
+                testBtn.className = inactiveCls;
+                materialGrid.classList.remove('hidden');
+                quizGrid.classList.add('hidden');
+                if (countLabel) countLabel.classList.add('hidden');
+                requestAnimationFrame(() => initInstagramEmbeds());
+            }
+        };
+
+        // Renders the active season's study material on the Home tab (active season only —
+        // unlike the Study tab, Home never shows ended/upcoming seasons or the General bucket).
+        const renderHomeMaterialGrid = (activeSeasonNow) => {
+            const materialGrid = document.getElementById('home-material-grid');
+            if (!materialGrid) return;
+
+            if (!activeSeasonNow) {
+                materialGrid.innerHTML = `<div class="col-span-full p-8 text-center text-slate-500 font-bold bg-slate-50 border border-slate-200 rounded-3xl">No active season right now. Check the Study tab for past material!</div>`;
+                return;
+            }
+
+            const items = (globalData.studyContent || [])
+                .filter(x => x.seasonId === activeSeasonNow.id)
+                .sort((a, b) => (a.order || 999) - (b.order || 999) || (a.createdAt || 0) - (b.createdAt || 0));
+
+            if (items.length === 0) {
+                materialGrid.innerHTML = `<div class="col-span-full p-8 text-center text-slate-500 font-bold bg-slate-50 border border-slate-200 rounded-3xl">No study material published for ${activeSeasonNow.name} yet.</div>`;
+                return;
+            }
+
+            materialGrid.innerHTML = items.map(item => item.type === 'youtube' ? renderYouTubeCard(item) : renderInstagramCard(item)).join('');
+            if (homeActiveTab === 'material') requestAnimationFrame(() => initInstagramEmbeds());
         };
 
         const renderDashboard = () => {
@@ -2392,6 +2518,11 @@
             } else {
                 quizGrid.innerHTML = availableQuizzes.map(q => renderQuizCardHTML(q, myResultsAllTime)).join('');
             }
+
+            // --- Home season label + Study Material sub-tab (active season only) ---
+            const seasonLabelEl = document.getElementById('home-active-season-label');
+            if (seasonLabelEl) seasonLabelEl.innerText = activeSeasonNow ? activeSeasonNow.name : 'Challenge Arena';
+            renderHomeMaterialGrid(activeSeasonNow);
 
             if(document.getElementById('view-exam').classList.contains('hidden-view') && 
                document.getElementById('view-review').classList.contains('hidden-view') &&
@@ -3947,6 +4078,7 @@
         // (null = season list overview, 'general' = non-season bucket, else a season id)
         let studyFilterActive = 'all';
         let studySelectedSeasonId = null;
+        let testSelectedSeasonId = null;
         const carouselState = {};
 
         const extractYTId = (url) => {
@@ -3967,7 +4099,7 @@
             document.getElementById('study-search-wrap')?.classList.add('hidden-view');
             document.getElementById('study-back-btn-wrap')?.classList.add('hidden');
             document.getElementById('study-hero-title').innerText = 'Study Zone';
-            document.getElementById('study-hero-subtitle').innerText = 'Tap a season to see its material & test';
+            document.getElementById('study-hero-subtitle').innerText = 'Tap a season to see its study material';
 
             const now = Date.now();
             const allItems = globalData.studyContent || [];
@@ -3983,7 +4115,6 @@
                 const isLive = now >= s.start && now <= s.end;
                 const isUpcoming = now < s.start;
                 const itemCount = allItems.filter(x => x.seasonId === s.id).length;
-                const quizCount = allQuizzes.filter(q => q.seasonId === s.id).length;
                 const statusBadge = isLive
                     ? `<span class="px-2.5 py-1 bg-emerald-100 border border-emerald-200 text-emerald-700 text-[10px] font-black rounded-full uppercase tracking-wide">🟢 Live</span>`
                     : isUpcoming
@@ -3999,22 +4130,21 @@
                             ${statusBadge}
                         </div>
                         <div class="text-xs font-bold text-slate-400">${new Date(s.start).toLocaleDateString('en-IN',{day:'numeric',month:'short'})} — ${new Date(s.end).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>
-                        <div class="text-xs font-bold text-slate-500 mt-1">${itemCount} study item${itemCount !== 1 ? 's' : ''}${quizCount > 0 ? ` · 📝 ${quizCount} test${quizCount !== 1 ? 's' : ''}` : ''}</div>
+                        <div class="text-xs font-bold text-slate-500 mt-1">${itemCount} study item${itemCount !== 1 ? 's' : ''}</div>
                     </div>
                     <svg class="w-5 h-5 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
                 </button>`;
             }).join('');
 
-            // "General" bucket — content/tests not tied to any season
+            // "General" bucket — content not tied to any season
             const seasonIdSet = new Set(seasons.map(s => s.id));
             const generalItemCount = allItems.filter(x => !x.seasonId || !seasonIdSet.has(x.seasonId)).length;
-            const generalQuizCount = allQuizzes.filter(q => !q.seasonId || !seasonIdSet.has(q.seasonId)).length;
             const generalCard = generalItemCount > 0 ? `
                 <button onclick="window.openSeasonDetail('general')" class="w-full text-left bg-white p-5 rounded-3xl border-2 border-slate-200 shadow-sm hover:shadow-lg transition-all flex items-center gap-4">
                     <div class="w-14 h-14 rounded-2xl flex-shrink-0 flex items-center justify-center text-2xl bg-slate-100">📂</div>
                     <div class="flex-1 min-w-0">
                         <div class="font-black text-slate-800 text-base mb-1">General</div>
-                        <div class="text-xs font-bold text-slate-500">${generalItemCount} study item${generalItemCount !== 1 ? 's' : ''}${generalQuizCount > 0 ? ` · 📝 ${generalQuizCount} test${generalQuizCount !== 1 ? 's' : ''}` : ''}</div>
+                        <div class="text-xs font-bold text-slate-500">${generalItemCount} study item${generalItemCount !== 1 ? 's' : ''}</div>
                     </div>
                     <svg class="w-5 h-5 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
                 </button>` : '';
@@ -4023,7 +4153,7 @@
             if (!cardsHTML) {
                 grid.innerHTML = '';
                 document.getElementById('study-empty-title').innerText = 'No study material yet';
-                document.getElementById('study-empty-subtitle').innerText = 'Your teacher will publish seasons with study content and tests here.';
+                document.getElementById('study-empty-subtitle').innerText = 'Your teacher will publish seasons with study content here.';
                 empty.classList.remove('hidden');
                 return;
             }
@@ -4063,10 +4193,6 @@
             const bucketItems = isGeneral
                 ? allItems.filter(x => !x.seasonId || !allSeasonIds.has(x.seasonId))
                 : allItems.filter(x => x.seasonId === studySelectedSeasonId);
-            const bucketQuizzes = (isGeneral
-                ? MASTER_QUIZZES.filter(q => !q.seasonId || !allSeasonIds.has(q.seasonId))
-                : MASTER_QUIZZES.filter(q => q.seasonId === studySelectedSeasonId)
-            ).filter(q => !q.restrictedTo || q.restrictedTo.length === 0 || q.restrictedTo.includes(currentUser.uid));
 
             // --- Filter chips scoped to this bucket's categories only ---
             const categories = [...new Set(bucketItems.map(x => x.category).filter(Boolean))];
@@ -4084,7 +4210,7 @@
                 }).join('');
             }
 
-            // --- Apply search + filter (only affects study material, the test always shows) ---
+            // --- Apply search + filter ---
             const searchTerm = (document.getElementById('study-search')?.value || '').toLowerCase().trim();
             const filteredItems = bucketItems.filter(item => {
                 const matchFilter = studyFilterActive === 'all'
@@ -4096,36 +4222,16 @@
                 return matchFilter && matchSearch;
             }).sort((a, b) => (a.order || 999) - (b.order || 999) || (a.createdAt || 0) - (b.createdAt || 0));
 
-            if (filteredItems.length === 0 && bucketQuizzes.length === 0) {
+            if (filteredItems.length === 0) {
                 grid.innerHTML = '';
                 document.getElementById('study-empty-title').innerText = 'Nothing here yet';
                 document.getElementById('study-empty-subtitle').innerText = isGeneral
                     ? 'No general study material has been published yet.'
-                    : `No study material or tests have been published for ${season.name} yet.`;
+                    : `No study material has been published for ${season.name} yet.`;
                 empty.classList.remove('hidden');
                 return;
             }
             empty.classList.add('hidden');
-
-            // --- Test section (the season's own test lives here, not on Home, once the season ends) ---
-            let testSectionHTML = '';
-            if (bucketQuizzes.length > 0) {
-                const myResultsAllTime = globalData.results.filter(r => r.studentId === currentUser.uid);
-                const pastSeasonNote = isPast ? `
-                    <div class="mb-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs font-bold text-amber-800 flex items-start gap-2">
-                        <span class="text-base flex-shrink-0">ℹ️</span>
-                        <span>This season has ended — you can still attempt the test below. Your XP will still be added to your profile and the all-time Top 10, it just won't count toward this season's Top 5 ranking.</span>
-                    </div>` : '';
-                testSectionHTML = `
-                    <div class="mb-8">
-                        <div class="flex items-center gap-2 mb-3">
-                            <span class="text-[11px] font-black text-slate-400 uppercase tracking-widest">📝 ${isGeneral ? 'Tests' : 'Season Test'}</span>
-                            <div class="flex-1 h-px bg-slate-100"></div>
-                        </div>
-                        ${pastSeasonNote}
-                        <div class="space-y-4">${bucketQuizzes.map(q => renderQuizCardHTML(q, myResultsAllTime)).join('')}</div>
-                    </div>`;
-            }
 
             // --- Study material, grouped by category ---
             const catGroups = {};
@@ -4143,7 +4249,7 @@
                     ${items.map(item => item.type === 'youtube' ? renderYouTubeCard(item) : renderInstagramCard(item)).join('')}
                 </div>`).join('');
 
-            grid.innerHTML = testSectionHTML + materialHTML;
+            grid.innerHTML = materialHTML;
             requestAnimationFrame(() => initInstagramEmbeds());
         };
 
@@ -4192,6 +4298,168 @@
 
         window.filterStudyView = () => window.renderStudyView();
         window.setStudyFilter = (val) => { studyFilterActive = val; window.renderStudyView(); };
+
+        // ========================
+        // TEST TAB — USER VIEW (tests only, mirrors Study tab's season structure)
+        // ========================
+
+        // ===== TEST TAB — Level 1: list of all seasons (+ General bucket) =====
+        const renderTestSeasonListView = () => {
+            const grid = document.getElementById('test-content-grid');
+            const empty = document.getElementById('test-empty');
+            document.getElementById('test-back-btn-wrap')?.classList.add('hidden');
+            document.getElementById('test-hero-title').innerText = 'Test Zone';
+            document.getElementById('test-hero-subtitle').innerText = 'Tap a season to see its tests';
+
+            const now = Date.now();
+            const allQuizzes = (MASTER_QUIZZES || []).filter(q => !q.restrictedTo || q.restrictedTo.length === 0 || q.restrictedTo.includes(currentUser.uid));
+            const seasons = (globalData.seasons || []).slice().sort((a, b) => {
+                const rank = (s) => (now >= s.start && now <= s.end) ? 2 : (now < s.start ? 1 : 0); // live, then upcoming, then ended
+                const ra = rank(a), rb = rank(b);
+                if (rb !== ra) return rb - ra;
+                return b.start - a.start; // newest first within the same group
+            });
+
+            const seasonCards = seasons.map(s => {
+                const isLive = now >= s.start && now <= s.end;
+                const isUpcoming = now < s.start;
+                const quizCount = allQuizzes.filter(q => q.seasonId === s.id).length;
+                const statusBadge = isLive
+                    ? `<span class="px-2.5 py-1 bg-emerald-100 border border-emerald-200 text-emerald-700 text-[10px] font-black rounded-full uppercase tracking-wide">🟢 Live</span>`
+                    : isUpcoming
+                        ? `<span class="px-2.5 py-1 bg-amber-100 border border-amber-200 text-amber-700 text-[10px] font-black rounded-full uppercase tracking-wide">📅 Upcoming</span>`
+                        : `<span class="px-2.5 py-1 bg-slate-100 border border-slate-200 text-slate-500 text-[10px] font-black rounded-full uppercase tracking-wide">✅ Ended</span>`;
+
+                return `
+                <button onclick="window.openTestSeasonDetail('${s.id}')" class="w-full text-left bg-white p-5 rounded-3xl border-2 ${isLive ? 'border-emerald-200 shadow-md' : 'border-slate-200'} shadow-sm hover:shadow-lg transition-all flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl flex-shrink-0 flex items-center justify-center text-2xl ${isLive ? 'bg-gradient-to-br from-emerald-400 to-teal-500' : 'bg-slate-100'}">${isLive ? '🏆' : '📁'}</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1 flex-wrap">
+                            <span class="font-black text-slate-800 text-base">${s.name}</span>
+                            ${statusBadge}
+                        </div>
+                        <div class="text-xs font-bold text-slate-400">${new Date(s.start).toLocaleDateString('en-IN',{day:'numeric',month:'short'})} — ${new Date(s.end).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>
+                        <div class="text-xs font-bold text-slate-500 mt-1">📝 ${quizCount} test${quizCount !== 1 ? 's' : ''}</div>
+                    </div>
+                    <svg class="w-5 h-5 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                </button>`;
+            }).join('');
+
+            // "General" bucket — tests not tied to any season
+            const seasonIdSet = new Set(seasons.map(s => s.id));
+            const generalQuizCount = allQuizzes.filter(q => !q.seasonId || !seasonIdSet.has(q.seasonId)).length;
+            const generalCard = generalQuizCount > 0 ? `
+                <button onclick="window.openTestSeasonDetail('general')" class="w-full text-left bg-white p-5 rounded-3xl border-2 border-slate-200 shadow-sm hover:shadow-lg transition-all flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl flex-shrink-0 flex items-center justify-center text-2xl bg-slate-100">📂</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-black text-slate-800 text-base mb-1">General</div>
+                        <div class="text-xs font-bold text-slate-500">📝 ${generalQuizCount} test${generalQuizCount !== 1 ? 's' : ''}</div>
+                    </div>
+                    <svg class="w-5 h-5 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                </button>` : '';
+
+            const cardsHTML = seasonCards + generalCard;
+            if (!cardsHTML) {
+                grid.innerHTML = '';
+                document.getElementById('test-empty-title').innerText = 'No tests yet';
+                document.getElementById('test-empty-subtitle').innerText = 'Your teacher will publish seasons with tests here.';
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+            grid.innerHTML = `<div class="space-y-3">${cardsHTML}</div>`;
+        };
+
+        // ===== TEST TAB — Level 2: one season's (or General's) tests =====
+        const renderTestSeasonDetailView = () => {
+            const grid = document.getElementById('test-content-grid');
+            const empty = document.getElementById('test-empty');
+            document.getElementById('test-back-btn-wrap')?.classList.remove('hidden');
+            document.getElementById('test-active-season-banner')?.classList.add('hidden');
+
+            const now = Date.now();
+            const isGeneral = testSelectedSeasonId === 'general';
+            const season = isGeneral ? null : (globalData.seasons || []).find(s => s.id === testSelectedSeasonId);
+
+            if (!isGeneral && !season) {
+                window.backToTestSeasonList(); // season got deleted while user had it open — bounce back
+                return;
+            }
+
+            const isPast = !!season && now > season.end;
+
+            document.getElementById('test-hero-title').innerText = isGeneral ? 'General' : season.name;
+            document.getElementById('test-hero-subtitle').innerText = isGeneral
+                ? 'Tests not tied to a specific season'
+                : `${new Date(season.start).toLocaleDateString('en-IN',{day:'numeric',month:'short'})} — ${new Date(season.end).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})} · ${now >= season.start && now <= season.end ? '🟢 Live now' : isPast ? '✅ Ended' : '📅 Upcoming'}`;
+
+            const allSeasonIds = new Set((globalData.seasons || []).map(s => s.id));
+            const bucketQuizzes = (isGeneral
+                ? MASTER_QUIZZES.filter(q => !q.seasonId || !allSeasonIds.has(q.seasonId))
+                : MASTER_QUIZZES.filter(q => q.seasonId === testSelectedSeasonId)
+            ).filter(q => !q.restrictedTo || q.restrictedTo.length === 0 || q.restrictedTo.includes(currentUser.uid));
+
+            if (bucketQuizzes.length === 0) {
+                grid.innerHTML = '';
+                document.getElementById('test-empty-title').innerText = 'Nothing here yet';
+                document.getElementById('test-empty-subtitle').innerText = isGeneral
+                    ? 'No general tests have been published yet.'
+                    : `No tests have been published for ${season.name} yet.`;
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            const myResultsAllTime = globalData.results.filter(r => r.studentId === currentUser.uid);
+            const pastSeasonNote = isPast ? `
+                <div class="mb-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs font-bold text-amber-800 flex items-start gap-2">
+                    <span class="text-base flex-shrink-0">ℹ️</span>
+                    <span>This season has ended — you can still attempt the test below. Your XP will still be added to your profile and the all-time Top 10, it just won't count toward this season's Top 5 ranking.</span>
+                </div>` : '';
+
+            grid.innerHTML = `
+                <div>
+                    ${pastSeasonNote}
+                    <div class="space-y-4">${bucketQuizzes.map(q => renderQuizCardHTML(q, myResultsAllTime)).join('')}</div>
+                </div>`;
+        };
+
+        // ===== TEST TAB — dispatcher =====
+        window.renderTestView = () => {
+            const grid = document.getElementById('test-content-grid');
+            if (!grid) return;
+
+            if (testSelectedSeasonId === null) {
+                // Active season banner is only meaningful on the season overview
+                const now = Date.now();
+                const activeSeason = (globalData.seasons || []).find(s => now >= s.start && now <= s.end);
+                const banner = document.getElementById('test-active-season-banner');
+                const bannerName = document.getElementById('test-banner-name');
+                const bannerDates = document.getElementById('test-banner-dates');
+                if (banner && activeSeason) {
+                    bannerName.innerText = activeSeason.name;
+                    bannerDates.innerText = `${new Date(activeSeason.start).toLocaleDateString('en-IN',{day:'numeric',month:'short'})} — ${new Date(activeSeason.end).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}`;
+                    banner.classList.remove('hidden');
+                } else if (banner) {
+                    banner.classList.add('hidden');
+                }
+                renderTestSeasonListView();
+            } else {
+                renderTestSeasonDetailView();
+            }
+        };
+
+        window.openTestSeasonDetail = (id) => {
+            testSelectedSeasonId = id;
+            window.renderTestView();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.backToTestSeasonList = () => {
+            testSelectedSeasonId = null;
+            window.renderTestView();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
 
         // ── YouTube Card ──────────────────────────────────────────────────────
         const renderYouTubeCard = (item) => {
