@@ -129,9 +129,16 @@
             position: fixed; bottom: calc(var(--bottombar-h) + env(safe-area-inset-bottom, 0px) + 16px); right: 20px; z-index: 1000;
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             transform: translateY(100px); opacity: 0;
+            /* Critical: opacity:0 alone does NOT remove an element from hit-testing — it stays
+               fully clickable/tappable even though invisible. Without this, the toast's hidden
+               hit-box (anchored near the bottom-right of the screen, the same zone as the mobile
+               bottom tab bar) silently intercepts taps meant for the tab bar underneath it,
+               since it has a much higher z-index. This is what broke tab taps on mobile Chrome
+               while desktop looked fine (desktop has no competing fixed bottom bar in that zone). */
+            pointer-events: none;
         }
         @media (min-width: 640px) { .toast { bottom: 20px; } }
-        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
 
         /* Student ID Badge */
         .student-id-badge {
@@ -212,6 +219,7 @@
         .profile-view-header::after {
             content: ''; position: absolute; right: -60px; bottom: -60px;
             width: 260px; height: 260px; background: rgba(255,255,255,0.06); border-radius: 50%;
+            pointer-events: none;
         }
 
         /* Nav tab pill (used standalone in a few places, e.g. legacy spacing) */
@@ -2701,7 +2709,7 @@
                         <div class="flex items-center justify-between p-3 rounded-2xl border transition-all ${style}">
                             <div class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onclick="window.openProfileView('${u.id}', 'leaderboard')">
                                 <div class="w-8 text-center text-lg shrink-0">${rankDisplay}</div>
-                                <img src="${u.avatar}" class="w-10 h-10 rounded-full border-2 border-white shadow-sm bg-white object-cover shrink-0">
+                                <img src="${u.avatar}" loading="lazy" decoding="async" class="w-10 h-10 rounded-full border-2 border-white shadow-sm bg-white object-cover shrink-0">
                                 <div class="flex flex-col min-w-0">
                                     <span class="text-sm truncate max-w-[80px] font-bold ${isMe ? 'text-indigo-600' : ''}">${isMe ? 'You' : u.name}</span>
                                     ${lbEid ? `<span class="text-[9px] font-mono text-slate-400 font-bold">${lbEid}</span>` : ''}
@@ -3832,17 +3840,22 @@
             empty?.classList.add('hidden-view');
 
             const lb = getLeaderboard(false);
+            // getLeaderboard() already computed each user's total XP and rank in one pass —
+            // reusing it via O(1) lookups instead of re-scanning globalData.results and
+            // re-searching `lb` for every single card (which was O(n²) for the whole grid).
+            const xpByUid = new Map(lb.map(l => [l.id, l.xp]));
+            const rankByUid = new Map(lb.map((l, i) => [l.id, i]));
 
             grid.innerHTML = filtered.map(u => {
                 const isFollowing = myFollowing.has(u.uid);
-                const userXp = globalData.results.filter(r => r.studentId === u.uid).reduce((s, r) => s + r.score, 0);
+                const userXp = xpByUid.get(u.uid) || 0;
                 const rankData = getRankData(userXp);
-                const lbRank = lb.findIndex(l => l.id === u.uid);
+                const lbRank = rankByUid.has(u.uid) ? rankByUid.get(u.uid) : -1;
                 const rankDisplay = lbRank >= 0 ? `#${lbRank + 1}` : '--';
                 return `
                 <div class="people-card" onclick="window.openProfileView('${u.uid}', 'people')">
                     <div class="relative">
-                        <img src="${u.avatar || AVATARS[0]}" class="w-20 h-20 rounded-full border-4 border-slate-100 shadow-md object-cover bg-slate-50">
+                        <img src="${u.avatar || AVATARS[0]}" loading="lazy" decoding="async" class="w-20 h-20 rounded-full border-4 border-slate-100 shadow-md object-cover bg-slate-50">
                         <div class="absolute -bottom-1 -right-1 text-sm bg-white rounded-full border border-slate-100 shadow px-1.5 py-0.5 font-black text-slate-600">${rankDisplay}</div>
                     </div>
                     <div class="w-full">
@@ -3925,7 +3938,7 @@
                 document.getElementById(v)?.classList.add('hidden-view');
             });
             document.getElementById('view-profile').classList.remove('hidden-view');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo(0, 0);
         };
 
         window.goBackFromProfile = () => {
@@ -4021,7 +4034,7 @@
                 return `
                 <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100 cursor-pointer hover:bg-indigo-50 hover:border-indigo-100 transition-colors" onclick="window.closeSocialModal(); window.openProfileView('${u.uid}', 'dashboard')">
                     <div class="flex items-center gap-3 min-w-0">
-                        <img src="${u.avatar || AVATARS[0]}" class="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover shrink-0">
+                        <img src="${u.avatar || AVATARS[0]}" loading="lazy" decoding="async" class="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover shrink-0">
                         <div class="min-w-0">
                             <p class="font-bold text-slate-800 text-sm truncate">${u.name || 'Student'}</p>
                             <p class="text-[10px] font-bold text-indigo-400 truncate">${u.username ? '@' + u.username : (u.enrollmentId || '')}</p>
@@ -4092,7 +4105,7 @@
                 return `
                 <div class="flex items-center justify-between p-3 bg-white rounded-2xl border border-slate-100 cursor-pointer hover:border-indigo-200 transition-colors" onclick="window.closeSocialModal(); window.openProfileView('${s.uid}', 'dashboard')">
                     <div class="flex items-center gap-3 min-w-0">
-                        <img src="${u.avatar || AVATARS[0]}" class="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover shrink-0">
+                        <img src="${u.avatar || AVATARS[0]}" loading="lazy" decoding="async" class="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover shrink-0">
                         <div class="min-w-0">
                             <p class="font-bold text-slate-800 text-sm truncate">${u.name || 'Student'}</p>
                             <p class="text-[10px] font-semibold text-slate-400 truncate">${viaText}</p>
@@ -4751,7 +4764,7 @@
             const searchInput = document.getElementById('study-search');
             if (searchInput) searchInput.value = '';
             window.renderStudyView();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo(0, 0);
         };
 
         window.backToSeasonList = () => {
@@ -4760,7 +4773,7 @@
             const searchInput = document.getElementById('study-search');
             if (searchInput) searchInput.value = '';
             window.renderStudyView();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo(0, 0);
         };
 
         window.filterStudyView = () => window.renderStudyView();
@@ -4922,13 +4935,13 @@
         window.openTestSeasonDetail = (id) => {
             testSelectedSeasonId = id;
             window.renderTestView();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo(0, 0);
         };
 
         window.backToTestSeasonList = () => {
             testSelectedSeasonId = null;
             window.renderTestView();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo(0, 0);
         };
 
         // ── Video Card ────────────────────────────────────────────────────────
