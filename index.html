@@ -903,7 +903,7 @@
             <div class="text-center py-20 bg-white rounded-3xl border border-slate-200 shadow-sm">
                 <div class="text-6xl mb-4">📖</div>
                 <p class="font-black text-slate-600 text-lg" id="study-empty-title">No study material yet</p>
-                <p class="text-sm text-slate-400 mt-2 font-medium" id="study-empty-subtitle">Your teacher will publish Instagram posts and YouTube videos here for you to study.</p>
+                <p class="text-sm text-slate-400 mt-2 font-medium" id="study-empty-subtitle">Your teacher will publish videos and study notes here for you to review.</p>
             </div>
         </div>
     </div>
@@ -1146,8 +1146,16 @@
                     <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
                 </div>
             </div>
-            <div id="social-modal-list" class="overflow-y-auto flex-1 p-2 space-y-1">
-                <!-- injected -->
+            <div class="overflow-y-auto flex-1">
+                <div id="social-modal-list" class="p-2 space-y-1">
+                    <!-- injected -->
+                </div>
+                <div id="social-modal-suggestions-wrap" class="hidden-view border-t border-slate-100 mt-1 pt-4 px-3 pb-5">
+                    <p class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Suggested for you</p>
+                    <div id="social-modal-suggestions" class="space-y-1">
+                        <!-- injected -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -3604,13 +3612,29 @@
                 if (document.getElementById('view-people') && !document.getElementById('view-people').classList.contains('hidden-view')) {
                     window.renderPeople();
                 }
+                refreshOpenSocialModal();
             }));
 
             // My followers
             socialUnsubscribes.push(onSnapshot(getFollowCol(currentUser.uid, 'followers'), snap => {
                 myFollowers = new Set(snap.docs.map(d => d.id));
                 updateFollowerCounts();
+                refreshOpenSocialModal();
             }));
+        };
+
+        // Re-renders the open followers/following modal's button labels (Follow / Following / Follow Back)
+        // without re-fetching, whenever myFollowing/myFollowers changes.
+        const refreshOpenSocialModal = () => {
+            const modal = document.getElementById('modal-social');
+            if (!modal || modal.classList.contains('hidden-view')) return;
+            const searchVal = (document.getElementById('social-modal-search')?.value || '').trim();
+            if (searchVal) {
+                window.filterSocialModal();
+            } else {
+                renderSocialModalList(socialModalUsers);
+                renderSocialModalSuggestions(socialModalSuggestions);
+            }
         };
 
         const updateFollowerCounts = () => {
@@ -3654,6 +3678,13 @@
             }
         };
 
+        // Returns the Instagram-style label for a follow button toward `uid`.
+        // "Follow Back" is shown when they already follow me but I don't follow them yet.
+        const getFollowButtonLabel = (uid) => {
+            if (myFollowing.has(uid)) return 'Following';
+            return myFollowers.has(uid) ? 'Follow Back' : '+ Follow';
+        };
+
         window.toggleFollowProfile = async () => {
             if (!viewingProfileUid) return;
             await window.toggleFollow(viewingProfileUid);
@@ -3666,7 +3697,7 @@
             if (uid === currentUser.uid) { btn.style.display = 'none'; return; }
             const isFollowing = myFollowing.has(uid);
             btn.className = `follow-btn ${isFollowing ? 'following' : 'follow'} text-sm px-5 py-2`;
-            btn.innerText = isFollowing ? 'Following' : 'Follow';
+            btn.innerText = getFollowButtonLabel(uid);
         };
 
         // --- People View ---
@@ -3738,7 +3769,7 @@
                         <div class="text-xs font-bold text-slate-500 mb-3">${userXp} XP</div>
                     </div>
                     <button onclick="event.stopPropagation(); window.toggleFollow('${u.uid}')" data-follow-uid="${u.uid}" class="follow-btn ${isFollowing ? 'following' : 'follow'} w-full justify-center">
-                        ${isFollowing ? 'Following' : '+ Follow'}
+                        ${getFollowButtonLabel(u.uid)}
                     </button>
                 </div>`;
             }).join('');
@@ -3823,41 +3854,187 @@
         };
 
         // --- Followers/Following Modal ---
-        window.openFollowersModal = async (type) => {
-            const title = type === 'followers' ? 'Followers' : 'Following';
-            document.getElementById('social-modal-title').innerText = title;
-            document.getElementById('social-modal-list').innerHTML = '<div class="text-center py-8 text-slate-400 font-bold">Loading...</div>';
+        // State for whichever profile's followers/following list is currently open in the modal.
+        let socialModalUid = null;          // uid whose list we're viewing (self or another profile)
+        let socialModalType = 'followers';  // 'followers' | 'following'
+        let socialModalUsers = [];          // cached list currently shown (for client-side search)
+        let socialModalSuggestions = [];    // cached "suggested for you" list
+
+        // Opens the modal for the CURRENT user's own followers/following (dashboard pills).
+        window.openFollowersModal = (type) => window.openSocialModal(currentUser.uid, type);
+
+        // Opens the modal for whichever profile is currently being viewed (profile page stat buttons).
+        // 'posts'/'tests' has no follow list, so it's just ignored rather than erroring.
+        window.openProfileSocialModal = (type) => {
+            if (type !== 'followers' && type !== 'following') return;
+            window.openSocialModal(viewingProfileUid, type);
+        };
+
+        window.openSocialModal = async (uid, type) => {
+            socialModalUid = uid;
+            socialModalType = type;
+            const searchEl = document.getElementById('social-modal-search');
+            if (searchEl) searchEl.value = '';
+            document.getElementById('social-modal-suggestions-wrap').classList.add('hidden-view');
             document.getElementById('modal-social').classList.remove('hidden-view');
+            window.switchSocialTab(type);
+        };
+
+        window.switchSocialTab = (type) => {
+            socialModalType = type;
+            ['followers', 'following'].forEach(t => {
+                const btn = document.getElementById(`social-tab-${t}`);
+                if (!btn) return;
+                btn.className = t === type
+                    ? 'flex-1 py-4 text-sm font-black text-slate-800 border-b-2 border-slate-900 transition-all'
+                    : 'flex-1 py-4 text-sm font-black text-slate-400 border-b-2 border-transparent transition-all';
+            });
+            const searchEl = document.getElementById('social-modal-search');
+            if (searchEl) searchEl.value = '';
+            loadSocialModalData();
+        };
+
+        const loadSocialModalData = async () => {
+            const uid = socialModalUid;
+            const type = socialModalType;
+            document.getElementById('social-modal-list').innerHTML = '<div class="text-center py-8 text-slate-400 font-bold">Loading…</div>';
+            document.getElementById('social-modal-suggestions-wrap').classList.add('hidden-view');
 
             try {
-                const snap = await getDocs(getFollowCol(currentUser.uid, type));
-                const uids = snap.docs.map(d => d.id);
-                const users = uids.map(uid => globalData.users[uid]).filter(Boolean);
+                const [followersSnap, followingSnap] = await Promise.all([
+                    getDocs(getFollowCol(uid, 'followers')),
+                    getDocs(getFollowCol(uid, 'following'))
+                ]);
+                const fCountEl = document.getElementById('social-tab-followers-count');
+                const gCountEl = document.getElementById('social-tab-following-count');
+                if (fCountEl) fCountEl.innerText = followersSnap.size;
+                if (gCountEl) gCountEl.innerText = followingSnap.size;
 
-                if (users.length === 0) {
-                    document.getElementById('social-modal-list').innerHTML = `<p class="text-center text-slate-400 font-bold py-6">No ${title.toLowerCase()} yet</p>`;
-                    return;
-                }
+                // Bail out if the user switched tabs again before this resolved
+                if (uid !== socialModalUid || type !== socialModalType) return;
 
-                document.getElementById('social-modal-list').innerHTML = users.map(u => {
-                    const isFollowing = myFollowing.has(u.uid);
-                    const isMe = u.uid === currentUser.uid;
-                    return `
-                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100 cursor-pointer hover:bg-indigo-50 hover:border-indigo-100 transition-colors" onclick="window.closeSocialModal(); window.openProfileView('${u.uid}', 'dashboard')">
-                        <div class="flex items-center gap-3">
-                            <img src="${u.avatar || AVATARS[0]}" class="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover">
-                            <div>
-                                <p class="font-bold text-slate-800 text-sm">${u.name}</p>
-                                <p class="text-[10px] font-mono text-slate-400">${u.enrollmentId || ''}</p>
-                            </div>
-                        </div>
-                        ${!isMe ? `<button onclick="event.stopPropagation(); window.toggleFollow('${u.uid}')" data-follow-uid="${u.uid}" class="follow-btn ${isFollowing ? 'following' : 'follow'}">
-                            ${isFollowing ? 'Following' : '+ Follow'}
-                        </button>` : ''}
-                    </div>`;
-                }).join('');
-            } catch(e) {
+                const activeSnap = type === 'followers' ? followersSnap : followingSnap;
+                const uids = activeSnap.docs.map(d => d.id);
+                socialModalUsers = uids.map(id => ({ uid: id, ...(globalData.users[id] || {}) })).filter(u => u.name || u.username);
+
+                renderSocialModalList(socialModalUsers);
+                loadSocialModalSuggestions(uids);
+            } catch (e) {
                 document.getElementById('social-modal-list').innerHTML = '<p class="text-center text-rose-400 font-bold py-6">Failed to load</p>';
+            }
+        };
+
+        const renderSocialModalList = (users, emptyMsg) => {
+            const listEl = document.getElementById('social-modal-list');
+            if (!listEl) return;
+            if (!users.length) {
+                listEl.innerHTML = `<p class="text-center text-slate-400 font-bold py-6">${emptyMsg || `No ${socialModalType} yet`}</p>`;
+                return;
+            }
+            listEl.innerHTML = users.map(u => {
+                const isMe = u.uid === currentUser.uid;
+                const isFollowing = myFollowing.has(u.uid);
+                return `
+                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100 cursor-pointer hover:bg-indigo-50 hover:border-indigo-100 transition-colors" onclick="window.closeSocialModal(); window.openProfileView('${u.uid}', 'dashboard')">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <img src="${u.avatar || AVATARS[0]}" class="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover shrink-0">
+                        <div class="min-w-0">
+                            <p class="font-bold text-slate-800 text-sm truncate">${u.name || 'Student'}</p>
+                            <p class="text-[10px] font-bold text-indigo-400 truncate">${u.username ? '@' + u.username : (u.enrollmentId || '')}</p>
+                        </div>
+                    </div>
+                    ${!isMe ? `<button onclick="event.stopPropagation(); window.toggleFollow('${u.uid}')" data-follow-uid="${u.uid}" class="follow-btn ${isFollowing ? 'following' : 'follow'} shrink-0">
+                        ${getFollowButtonLabel(u.uid)}
+                    </button>` : ''}
+                </div>`;
+            }).join('');
+        };
+
+        // "Suggested for you": people followed by the users in the currently-shown list,
+        // i.e. who your followers/following are themselves following — same idea as Instagram.
+        const loadSocialModalSuggestions = async (listUids) => {
+            const wrapEl = document.getElementById('social-modal-suggestions-wrap');
+            const candidates = listUids.filter(id => id !== currentUser.uid).slice(0, 15); // cap fan-out for performance
+            if (!candidates.length) { wrapEl.classList.add('hidden-view'); return; }
+
+            try {
+                const snaps = await Promise.all(candidates.map(id => getDocs(getFollowCol(id, 'following'))));
+
+                const tally = new Map(); // candidateUid -> Set(viaUid) of people who connect to them
+                snaps.forEach((snap, i) => {
+                    const viaUid = candidates[i];
+                    snap.docs.forEach(d => {
+                        const cUid = d.id;
+                        if (cUid === currentUser.uid) return;
+                        if (myFollowing.has(cUid)) return; // already following — not a suggestion
+                        if (!globalData.users[cUid]) return; // unknown/deleted user
+                        if (!tally.has(cUid)) tally.set(cUid, new Set());
+                        tally.get(cUid).add(viaUid);
+                    });
+                });
+
+                const suggestions = Array.from(tally.entries())
+                    .map(([uid, viaSet]) => ({
+                        uid,
+                        user: globalData.users[uid],
+                        viaNames: Array.from(viaSet).map(v => globalData.users[v]?.name).filter(Boolean)
+                    }))
+                    .sort((a, b) => b.viaNames.length - a.viaNames.length)
+                    .slice(0, 6);
+
+                socialModalSuggestions = suggestions;
+                // Don't show suggestions while the person is actively searching the list
+                const searchVal = (document.getElementById('social-modal-search')?.value || '').trim();
+                if (!searchVal) renderSocialModalSuggestions(suggestions);
+            } catch (e) {
+                wrapEl.classList.add('hidden-view');
+            }
+        };
+
+        const renderSocialModalSuggestions = (suggestions) => {
+            const wrapEl = document.getElementById('social-modal-suggestions-wrap');
+            const listEl = document.getElementById('social-modal-suggestions');
+            const visible = suggestions.filter(s => !myFollowing.has(s.uid)); // re-check in case a follow just happened
+            if (!visible.length) { wrapEl.classList.add('hidden-view'); return; }
+            wrapEl.classList.remove('hidden-view');
+
+            listEl.innerHTML = visible.map(s => {
+                const u = s.user;
+                const names = s.viaNames;
+                const viaText = names.length === 0 ? 'Suggested for you'
+                    : names.length === 1 ? `Followed by ${names[0]}`
+                    : names.length === 2 ? `Followed by ${names[0]} and ${names[1]}`
+                    : `Followed by ${names[0]} + ${names.length - 1} more`;
+                return `
+                <div class="flex items-center justify-between p-3 bg-white rounded-2xl border border-slate-100 cursor-pointer hover:border-indigo-200 transition-colors" onclick="window.closeSocialModal(); window.openProfileView('${s.uid}', 'dashboard')">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <img src="${u.avatar || AVATARS[0]}" class="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover shrink-0">
+                        <div class="min-w-0">
+                            <p class="font-bold text-slate-800 text-sm truncate">${u.name || 'Student'}</p>
+                            <p class="text-[10px] font-semibold text-slate-400 truncate">${viaText}</p>
+                        </div>
+                    </div>
+                    <button onclick="event.stopPropagation(); window.toggleFollow('${s.uid}')" data-follow-uid="${s.uid}" class="follow-btn follow shrink-0">
+                        ${getFollowButtonLabel(s.uid)}
+                    </button>
+                </div>`;
+            }).join('');
+        };
+
+        window.filterSocialModal = () => {
+            const q = (document.getElementById('social-modal-search')?.value || '').toLowerCase().trim();
+            const wrapEl = document.getElementById('social-modal-suggestions-wrap');
+            if (q) {
+                wrapEl.classList.add('hidden-view');
+                const filtered = socialModalUsers.filter(u =>
+                    u.name?.toLowerCase().includes(q) ||
+                    u.username?.toLowerCase().includes(q) ||
+                    u.enrollmentId?.toLowerCase().includes(q)
+                );
+                renderSocialModalList(filtered, 'No matches found');
+            } else {
+                renderSocialModalList(socialModalUsers);
+                renderSocialModalSuggestions(socialModalSuggestions);
             }
         };
 
@@ -4402,8 +4579,8 @@
             if (filterBar) {
                 filterBar.innerHTML = [
                     { val: 'all', label: '✦ All' },
-                    { val: 'instagram', label: '📸 Instagram' },
-                    { val: 'youtube', label: '▶️ YouTube' },
+                    { val: 'instagram', label: '🖼️ Notes' },
+                    { val: 'youtube', label: '🎬 Videos' },
                     ...categories.map(c => ({ val: c, label: c }))
                 ].map(({ val, label }) => {
                     const isAct = studyFilterActive === val;
@@ -4664,21 +4841,21 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        // ── YouTube Card ──────────────────────────────────────────────────────
+        // ── Video Card ────────────────────────────────────────────────────────
         const renderYouTubeCard = (item) => {
             const vid = item.youtubeId || extractYTId(item.originalUrl || '');
             const dateStr = item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : '';
             return `
             <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-md transition-shadow" id="sc-card-${item.id}">
                 <div class="flex items-start gap-3 p-4 pb-3">
-                    <div class="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
-                        <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                    <div class="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 text-indigo-600" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="font-black text-slate-800 text-sm leading-snug">${item.title}</div>
                         <div class="flex items-center gap-2 mt-1 flex-wrap">
                             ${item.category ? `<span class="px-2 py-0.5 bg-violet-100 text-violet-700 text-[10px] font-black rounded-full">${item.category}</span>` : ''}
-                            <span class="px-2 py-0.5 bg-red-100 text-red-600 text-[10px] font-black rounded-full">YouTube</span>
+                            <span class="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-black rounded-full">Video Lesson</span>
                             <span class="text-[10px] text-slate-400 font-medium">${dateStr}</span>
                         </div>
                     </div>
@@ -4688,11 +4865,11 @@
                     <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
                         <iframe style="position:absolute;top:0;left:0;width:100%;height:100%;" src="https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1" title="${item.title}" frameborder="0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy"></iframe>
                     </div>
-                </div>` : `<div class="mx-4 mb-4 p-3 bg-red-50 rounded-2xl text-red-600 font-bold text-sm text-center">⚠️ Video unavailable</div>`}
+                </div>` : `<div class="mx-4 mb-4 p-3 bg-rose-50 rounded-2xl text-rose-600 font-bold text-sm text-center">⚠️ Video unavailable</div>`}
             </div>`;
         };
 
-        // ── Instagram Carousel Card ───────────────────────────────────────────
+        // ── Visual Notes Carousel Card ────────────────────────────────────────
         const renderInstagramCard = (item) => {
             const posts = item.posts || [];
             const multiPost = posts.length > 1;
@@ -4701,7 +4878,7 @@
 
             const slides = posts.map((p, i) => `
                 <div style="min-width:100%;scroll-snap-align:start;" class="insta-carousel-slide">
-                    <iframe src="https://www.instagram.com/p/${p.shortcode}/embed/captioned/"
+                    <iframe src="https://www.instagram.com/p/${p.shortcode}/embed/"
                         scrolling="no" frameborder="0" allowtransparency="true" loading="lazy"
                         title="Slide ${i+1} of ${posts.length}"></iframe>
                 </div>`).join('');
@@ -4715,14 +4892,14 @@
             <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-md transition-shadow" id="sc-card-${item.id}">
                 <!-- Header -->
                 <div class="flex items-start gap-3 p-4 pb-3">
-                    <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)">
-                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                    <div class="w-9 h-9 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="font-black text-slate-800 text-sm leading-snug">${item.title}</div>
                         <div class="flex items-center gap-1.5 mt-1 flex-wrap">
                             ${item.category ? `<span class="px-2 py-0.5 bg-pink-100 text-pink-700 text-[10px] font-black rounded-full">${item.category}</span>` : ''}
-                            <span class="px-2 py-0.5 text-[10px] font-black rounded-full text-white" style="background:linear-gradient(90deg,#e6683c,#cc2366)">Instagram</span>
+                            <span class="px-2 py-0.5 bg-violet-100 text-violet-700 text-[10px] font-black rounded-full">Study Notes</span>
                             ${multiPost ? `<span class="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-black rounded-full">${posts.length} slides</span>` : ''}
                             <span class="text-[10px] text-slate-400 font-medium">${dateStr}</span>
                         </div>
