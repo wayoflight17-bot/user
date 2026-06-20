@@ -105,10 +105,11 @@
         .avatar-option.selected { border-color: #4f46e5; transform: scale(1.1); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
 
         .toast {
-            position: fixed; bottom: 20px; right: 20px; z-index: 1000;
+            position: fixed; bottom: calc(var(--bottombar-h) + env(safe-area-inset-bottom, 0px) + 16px); right: 20px; z-index: 1000;
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             transform: translateY(100px); opacity: 0;
         }
+        @media (min-width: 640px) { .toast { bottom: 20px; } }
         .toast.show { transform: translateY(0); opacity: 1; }
 
         /* Student ID Badge */
@@ -192,7 +193,7 @@
             width: 260px; height: 260px; background: rgba(255,255,255,0.06); border-radius: 50%;
         }
 
-        /* Nav tab pill */
+        /* Nav tab pill (used standalone in a few places, e.g. legacy spacing) */
         .nav-tab {
             display: flex; align-items: center; gap: 5px; padding: 7px 10px;
             border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer;
@@ -204,6 +205,62 @@
         }
         .nav-tab.active { background: #eef2ff; color: #4f46e5; }
         .nav-tab:hover:not(.active) { background: #f8fafc; color: #334155; }
+
+        /* ===== Instagram-style navigation ===== */
+        :root { --sidebar-w: 84px; --sidebar-w-lg: 230px; --bottombar-h: 60px; }
+
+        /* Desktop / tablet: fixed left sidebar */
+        .app-sidebar {
+            position: fixed; top: 0; left: 0; bottom: 0; z-index: 30;
+            width: var(--sidebar-w);
+            background: #ffffff; border-right: 1px solid #e2e8f0;
+            display: none; flex-direction: column;
+            padding: 20px 10px;
+        }
+        @media (min-width: 640px) { .app-sidebar { display: flex; } }
+        @media (min-width: 1024px) { .app-sidebar { width: var(--sidebar-w-lg); padding: 20px 16px; } }
+
+        .sidebar-tab {
+            display: flex; align-items: center; gap: 14px;
+            padding: 12px; border-radius: 14px; font-size: 13px; font-weight: 700;
+            color: #475569; border: none; background: transparent; cursor: pointer;
+            transition: all 0.15s; width: 100%; justify-content: center;
+        }
+        @media (min-width: 1024px) { .sidebar-tab { justify-content: flex-start; } }
+        .sidebar-tab .tab-label { display: none; }
+        @media (min-width: 1024px) { .sidebar-tab .tab-label { display: inline; } }
+        .sidebar-tab.active { background: #eef2ff; color: #4f46e5; }
+        .sidebar-tab:hover:not(.active) { background: #f8fafc; color: #1e293b; }
+        .sidebar-tab svg { flex-shrink: 0; width: 22px; height: 22px; }
+
+        /* Mobile: fixed bottom tab bar */
+        .app-bottombar {
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+            background: rgba(255,255,255,0.97); backdrop-filter: blur(12px);
+            border-top: 1px solid #e2e8f0;
+            display: flex; align-items: stretch; justify-content: space-around;
+            height: var(--bottombar-h);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        @media (min-width: 640px) { .app-bottombar { display: none; } }
+
+        .bottombar-tab {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 2px; flex: 1; border: none; background: transparent; cursor: pointer;
+            color: #94a3b8; font-size: 10px; font-weight: 700; transition: color 0.15s;
+        }
+        .bottombar-tab.active { color: #4f46e5; }
+        .bottombar-tab svg { width: 22px; height: 22px; }
+
+        /* Push page content clear of the fixed sidebar / bottom bar.
+           Applied to body-level elements (nav, main, modals-container) via margin/padding-left
+           so that any max-w-* mx-auto centering inside still centers within the *remaining* width. */
+        .app-content-offset { padding-bottom: calc(var(--bottombar-h) + env(safe-area-inset-bottom, 0px) + 12px); }
+        @media (min-width: 640px) { .app-content-offset { margin-left: var(--sidebar-w); padding-bottom: 0; } }
+        @media (min-width: 1024px) { .app-content-offset { margin-left: var(--sidebar-w-lg); } }
+        .app-topbar-offset { }
+        @media (min-width: 640px) { .app-topbar-offset { margin-left: var(--sidebar-w); } }
+        @media (min-width: 1024px) { .app-topbar-offset { margin-left: var(--sidebar-w-lg); } }
 
         /* Shimmer anim */
         @keyframes shimmer { to { transform: translateX(200%); } }
@@ -264,8 +321,8 @@
 </head>
 <body class="text-slate-900 pb-12">
 
-    <!-- Top Navigation -->
-    <nav class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <!-- Top bar: logo + avatar only. Tabs live in the sidebar (desktop) / bottom bar (mobile) below. -->
+    <nav id="app-topbar" class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div class="max-w-7xl mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 cursor-pointer shrink-0" onclick="window.switchView('view-dashboard')">
                 <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200 overflow-hidden relative shrink-0">
@@ -274,31 +331,8 @@
                 </div>
                 <h1 class="font-extrabold text-base sm:text-xl tracking-tight text-slate-800 hidden sm:block app-title-text">Way of Light</h1>
             </div>
-            
+
             <div id="nav-user" class="hidden-view flex items-center gap-2">
-                <!-- Unified tab pills — always visible on ALL screen sizes -->
-                <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-                    <button onclick="window.switchView('view-dashboard')" id="nav-tab-dashboard" class="nav-tab active">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                        <span class="hidden xs:inline">Home</span>
-                    </button>
-                    <button onclick="window.switchView('view-test')" id="nav-tab-test" class="nav-tab">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
-                        <span>Test</span>
-                    </button>
-                    <button onclick="window.switchView('view-study')" id="nav-tab-study" class="nav-tab">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-                        <span>Study</span>
-                    </button>
-                    <button onclick="window.switchView('view-certificates')" id="nav-tab-certificates" class="nav-tab">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                        <span>Certs</span>
-                    </button>
-                    <button onclick="window.switchView('view-people')" id="nav-tab-people" class="nav-tab">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                        <span>People</span>
-                    </button>
-                </div>
                 <!-- Avatar / profile button -->
                 <div class="flex items-center gap-2 bg-slate-50 px-2.5 py-1.5 rounded-full border border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors shrink-0" onclick="window.openProfile()">
                     <img id="nav-avatar" src="" class="w-8 h-8 rounded-full bg-white border border-slate-200 object-cover">
@@ -309,6 +343,72 @@
                 </div>
             </div>
         </div>
+    </nav>
+
+    <!-- Desktop / tablet: fixed left sidebar (Instagram-style) -->
+    <aside id="app-sidebar" class="app-sidebar hidden-view">
+        <div class="flex items-center gap-2.5 px-2 mb-8 cursor-pointer" onclick="window.switchView('view-dashboard')">
+            <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200 overflow-hidden relative shrink-0">
+                <img id="app-dynamic-logo-sidebar" src="" onerror="this.classList.add('hidden'); document.getElementById('app-default-logo-sidebar').classList.remove('hidden');" class="hidden w-full h-full object-cover absolute inset-0 z-10 bg-white">
+                <svg id="app-default-logo-sidebar" class="w-5 h-5 text-white relative z-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+            </div>
+            <h1 class="font-extrabold text-lg tracking-tight text-slate-800 hidden lg:block app-title-text">Way of Light</h1>
+        </div>
+
+        <div class="flex flex-col gap-1">
+            <button onclick="window.switchView('view-dashboard')" data-tab="dashboard" class="sidebar-tab active">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                <span class="tab-label">Home</span>
+            </button>
+            <button onclick="window.switchView('view-test')" data-tab="test" class="sidebar-tab">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                <span class="tab-label">Test</span>
+            </button>
+            <button onclick="window.switchView('view-study')" data-tab="study" class="sidebar-tab">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                <span class="tab-label">Study</span>
+            </button>
+            <button onclick="window.switchView('view-certificates')" data-tab="certificates" class="sidebar-tab">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                <span class="tab-label">Certs</span>
+            </button>
+            <button onclick="window.switchView('view-people')" data-tab="people" class="sidebar-tab">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span class="tab-label">People</span>
+            </button>
+        </div>
+
+        <div class="flex-1"></div>
+
+        <!-- Profile shortcut at the bottom of the sidebar, Instagram-style -->
+        <button onclick="window.openProfile()" class="sidebar-tab !justify-start gap-3 mt-2">
+            <img id="nav-avatar-sidebar" src="" class="w-6 h-6 rounded-full bg-white border border-slate-200 object-cover shrink-0">
+            <span class="tab-label truncate">Profile</span>
+        </button>
+    </aside>
+
+    <!-- Mobile: fixed bottom tab bar (Instagram-style) -->
+    <nav id="app-bottombar" class="app-bottombar hidden-view">
+        <button onclick="window.switchView('view-dashboard')" data-tab="dashboard" class="bottombar-tab active">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            <span>Home</span>
+        </button>
+        <button onclick="window.switchView('view-test')" data-tab="test" class="bottombar-tab">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+            <span>Test</span>
+        </button>
+        <button onclick="window.switchView('view-study')" data-tab="study" class="bottombar-tab">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            <span>Study</span>
+        </button>
+        <button onclick="window.switchView('view-certificates')" data-tab="certificates" class="bottombar-tab">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            <span>Certs</span>
+        </button>
+        <button onclick="window.switchView('view-people')" data-tab="people" class="bottombar-tab">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <span>People</span>
+        </button>
     </nav>
 
     <!-- Hidden element for JS enrollment ID sync (displayed in dashboard) -->
@@ -431,7 +531,7 @@
         </div>
 
         <!-- DASHBOARD VIEW -->
-        <div id="view-dashboard" class="hidden-view fade-in space-y-8">
+        <div id="view-dashboard" class="hidden-view fade-in space-y-8 app-content-offset">
 
             <div id="hero-banner" class="p-8 md:p-10 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden transition-all duration-700 bg-indigo-600">
                 <div class="absolute right-0 top-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -mr-24 -mt-24 pointer-events-none"></div>
@@ -588,7 +688,7 @@
 
         <!-- EXAM SESSION -->
         <!-- EXAM VIEW - DUOLINGO STYLE -->
-        <div id="view-exam" class="hidden-view fade-in bg-gradient-to-b from-slate-50 to-white min-h-screen pb-20">
+        <div id="view-exam" class="hidden-view fade-in bg-gradient-to-b from-slate-50 to-white min-h-screen pb-20 app-content-offset">
             
             <!-- TOP BAR: Jump-to-question, Progress, Answered, Timer -->
             <div class="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
@@ -726,7 +826,7 @@
         </div>
 
         <!-- REVIEW RESULTS -->
-        <div id="view-review" class="hidden-view fade-in max-w-4xl mx-auto py-6 space-y-6">
+        <div id="view-review" class="hidden-view fade-in max-w-4xl mx-auto py-6 space-y-6 app-content-offset">
             <button onclick="window.switchView('view-dashboard')" class="px-4 py-2 bg-white border border-slate-200 text-sm font-bold text-slate-600 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm">
                 ← Return to Dashboard
             </button>
@@ -751,7 +851,7 @@
     </main>
 
     <!-- ===== STUDY CONTENT VIEW ===== -->
-    <div id="view-study" class="hidden-view fade-in pb-16">
+    <div id="view-study" class="hidden-view fade-in pb-16 app-content-offset">
 
         <!-- Hero header -->
         <div style="background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#4c1d95 100%)" class="px-4 pt-10 pb-16 mb-0 relative overflow-hidden">
@@ -809,7 +909,7 @@
     </div>
 
     <!-- ===== TEST VIEW ===== -->
-    <div id="view-test" class="hidden-view fade-in pb-16">
+    <div id="view-test" class="hidden-view fade-in pb-16 app-content-offset">
 
         <!-- Hero header -->
         <div style="background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#4c1d95 100%)" class="px-4 pt-10 pb-16 mb-0 relative overflow-hidden">
@@ -857,7 +957,7 @@
     </div>
 
     <!-- PEOPLE VIEW -->
-    <div id="view-people" class="hidden-view fade-in max-w-5xl mx-auto px-4 py-8 space-y-6">
+    <div id="view-people" class="hidden-view fade-in max-w-5xl mx-auto px-4 py-8 space-y-6 app-content-offset">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
                 <h2 class="text-2xl font-black text-slate-900">Discover People</h2>
@@ -887,7 +987,7 @@
     </div>
 
     <!-- CERTIFICATES VIEW -->
-    <div id="view-certificates" class="hidden-view fade-in max-w-5xl mx-auto px-4 py-8 space-y-8">
+    <div id="view-certificates" class="hidden-view fade-in max-w-5xl mx-auto px-4 py-8 space-y-8 app-content-offset">
         <div>
             <h2 class="text-2xl font-black text-slate-900">My Certificates</h2>
             <p class="text-slate-500 text-sm font-medium mt-1">Each certificate has a unique Certificate ID. Share it — anyone can verify it's genuine and not a duplicate.</p>
@@ -915,7 +1015,7 @@
     </div>
 
     <!-- PROFILE VIEW — Instagram style -->
-    <div id="view-profile" class="hidden-view fade-in max-w-2xl mx-auto px-4 py-6">
+    <div id="view-profile" class="hidden-view fade-in max-w-2xl mx-auto px-4 py-6 app-content-offset">
 
         <!-- Top nav bar -->
         <div class="flex items-center justify-between mb-6">
@@ -1714,21 +1814,29 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
-            // Update nav tabs
-            ['dashboard', 'people', 'certificates', 'study', 'test'].forEach(tab => {
-                const navTab = document.getElementById(`nav-tab-${tab}`);
-                if (navTab) {
-                    navTab.className = id === `view-${tab}` ? 'nav-tab active' : 'nav-tab';
-                }
+            // Update nav tabs (sidebar + bottom bar both use data-tab, so one loop covers both)
+            document.querySelectorAll('[data-tab]').forEach(navTab => {
+                const isActive = id === `view-${navTab.dataset.tab}`;
+                navTab.classList.toggle('active', isActive);
             });
             
             const ctrl = document.getElementById('nav-user');
+            const sidebar = document.getElementById('app-sidebar');
+            const bottombar = document.getElementById('app-bottombar');
+            const topbar = document.getElementById('app-topbar');
             if (currentUser && userData && id !== 'view-onboarding') {
                 ctrl.classList.remove('hidden-view');
+                sidebar?.classList.remove('hidden-view');
+                bottombar?.classList.remove('hidden-view');
+                topbar?.classList.add('app-topbar-offset');
                 document.getElementById('nav-username').innerText = userData.name || 'Student';
                 setImgSrc('nav-avatar', userData.avatar || AVATARS[0]);
+                setImgSrc('nav-avatar-sidebar', userData.avatar || AVATARS[0]);
             } else {
                 ctrl.classList.add('hidden-view');
+                sidebar?.classList.add('hidden-view');
+                bottombar?.classList.add('hidden-view');
+                topbar?.classList.remove('app-topbar-offset');
             }
 
             // Render people when switching to people view
