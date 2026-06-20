@@ -1236,6 +1236,7 @@
                 </div>
             </div>
             <div class="p-6 bg-white border-t border-slate-100 space-y-3">
+                <div id="profile-error" class="hidden-view bg-rose-100 border border-rose-200 text-rose-600 text-xs font-bold p-3 rounded-xl"></div>
                 <div class="flex gap-4">
                     <button onclick="window.closeModal()" class="flex-1 py-4 font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-2xl transition-colors">Cancel</button>
                     <button onclick="window.saveProfile()" class="flex-1 py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition-all">Save Changes</button>
@@ -2646,6 +2647,8 @@
             if(!userData) return;
             tempAvatar = userData.avatar;
             document.getElementById('profile-name').value = userData.name;
+            const profError = document.getElementById('profile-error');
+            if (profError) profError.classList.add('hidden-view');
             const profUsername = document.getElementById('profile-username');
             if (profUsername) {
                 profUsername.value = userData.username || '';
@@ -2689,15 +2692,15 @@
 
         window.saveProfile = async () => {
             const newName = document.getElementById('profile-name').value.trim();
-            if(!newName) return showError("Name is required.", 'auth-error'); 
+            if(!newName) return showError("Name is required.", 'profile-error'); 
             const newBio = (document.getElementById('profile-bio')?.value || '').trim();
             const usernameInput = document.getElementById('profile-username');
             const newUsername = usernameInput ? normalizeUsername(usernameInput.value) : userData.username;
 
             if (usernameInput) {
-                if (!newUsername || newUsername.length < 3) return showError("Username must be at least 3 characters.", 'auth-error');
+                if (!newUsername || newUsername.length < 3) return showError("Username must be at least 3 characters.", 'profile-error');
                 if (newUsername !== userData.username && await isUsernameTaken(newUsername, currentUser.uid)) {
-                    return showError(`Username @${newUsername} is already taken.`, 'auth-error');
+                    return showError(`Username @${newUsername} is already taken.`, 'profile-error');
                 }
             }
 
@@ -2711,7 +2714,7 @@
                 window.closeModal();
                 showToast("Profile Updated! ✨", "🥷");
             } catch(e) {
-                alert("Update failed. Check connection.");
+                showError("Update failed. Check your connection and try again.", 'profile-error');
             }
         };
 
