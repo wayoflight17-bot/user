@@ -78,27 +78,125 @@
         /* Hero gradient search */
         #study-search::placeholder { color: rgba(199,210,254,0.7); }
 
-        /* Season section header */
-        .study-season-section[data-active="true"] { }
-
-        /* Instagram carousel */
-        .insta-carousel-track { display: flex; will-change: transform; }
-        .insta-carousel-slide { flex: 0 0 100%; min-width: 0; }
-        .insta-carousel-slide iframe { display: block; border: none; width: 100%; height: 540px; }
-        @media (max-width: 640px) { .insta-carousel-slide iframe { height: 460px; } }
-
-        /* Carousel nav dots */
-        .carousel-dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; transition: all 0.2s; cursor: pointer; border: none; padding: 0; }
-        .carousel-dot.active { background: #7c3aed; width: 24px; border-radius: 4px; }
-
-        /* Carousel arrow buttons */
-        .carousel-btn { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.96); border: 1.5px solid rgba(226,232,240,0.8); display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.14); transition: all 0.15s; color: #334155; }
-        .carousel-btn:hover:not(:disabled) { background: #f8fafc; box-shadow: 0 4px 14px rgba(0,0,0,0.18); transform: scale(1.08); }
-        .carousel-btn:disabled { opacity: 0.25; cursor: default; transform: none; pointer-events: none; }
-
         /* Hide scrollbar on filter bar */
         #study-filter-bar::-webkit-scrollbar { display: none; }
         #study-filter-bar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* ===== INSTAGRAM-STYLE CONTINUOUS FEED ===== */
+        html { scroll-behavior: smooth; }
+
+        /* The feed is a plain white column — no background dots, no gaps */
+        #study-content-grid {
+            background: #ffffff;
+            max-width: 100% !important;
+        }
+
+        /* Each post sits directly below the previous — only a hairline divider */
+        .feed-post {
+            background: #fff;
+            border-bottom: 1px solid #efefef;
+            width: 100%;
+        }
+        .feed-post:last-child { border-bottom: none; }
+
+        /* Post header — identical for YouTube and Instagram */
+        .feed-post-header {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding: 11px 14px 8px;
+        }
+        .feed-avatar-ring {
+            width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 17px;
+        }
+        .feed-avatar-ring.yt    { background: linear-gradient(135deg,#fde68a,#f87171); }
+        .feed-avatar-ring.insta { background: linear-gradient(135deg,#c084fc,#f472b6,#fb923c); }
+
+        .feed-post-meta { flex: 1; min-width: 0; }
+        .feed-post-title {
+            font-size: 13.5px; font-weight: 900; color: #0f172a;
+            line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .feed-post-sub {
+            display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px;
+            align-items: center;
+        }
+        .feed-tag {
+            font-size: 10px; font-weight: 800; border-radius: 999px; padding: 1px 7px;
+        }
+        .feed-tag-yt    { background: #fee2e2; color: #dc2626; }
+        .feed-tag-insta { background: #f3e8ff; color: #7c3aed; }
+        .feed-tag-cat   { background: #ecfdf5; color: #059669; }
+        .feed-tag-date  { font-size: 10px; font-weight: 600; color: #94a3b8; }
+
+        /* Media block — FULL WIDTH, no side margins, no border-radius */
+        .feed-media { width: 100%; overflow: hidden; background: #000; }
+
+        /* YouTube 16:9 ratio wrapper */
+        .feed-media-ratio {
+            position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;
+        }
+        .feed-media-ratio iframe {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            border: none; display: block;
+        }
+
+        /* Instagram embed — full width, tall enough to show the post */
+        .feed-media .insta-carousel-track { display: flex; will-change: transform; }
+        .feed-media .insta-carousel-slide { flex: 0 0 100%; min-width: 0; }
+        .feed-media .insta-carousel-slide iframe {
+            display: block; border: none; width: 100%; height: 520px;
+        }
+        @media (max-width: 480px) {
+            .feed-media .insta-carousel-slide iframe { height: 430px; }
+        }
+
+        /* Post footer — dots + counter + type label */
+        .feed-post-footer {
+            padding: 8px 14px 10px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        /* Dot pagination */
+        .carousel-dot { width: 7px; height: 7px; border-radius: 50%; background: #cbd5e1; transition: all 0.2s; cursor: pointer; border: none; padding: 0; }
+        .carousel-dot.active { background: #7c3aed; width: 20px; border-radius: 4px; }
+
+        /* Arrow buttons overlaid on media */
+        .carousel-btn {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: rgba(255,255,255,0.92); border: 1.5px solid rgba(226,232,240,0.7);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+            transition: all 0.15s; color: #334155;
+        }
+        .carousel-btn:hover:not(:disabled) { background: #f8fafc; transform: scale(1.08); }
+        .carousel-btn:disabled { opacity: 0.2; cursor: default; pointer-events: none; }
+
+        /* Subtle category separator inside the feed */
+        .feed-cat-divider {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 14px 6px; background: #fafafa;
+            border-bottom: 1px solid #efefef; border-top: 1px solid #efefef;
+        }
+        .feed-cat-divider span {
+            font-size: 10px; font-weight: 900; text-transform: uppercase;
+            letter-spacing: 0.08em; color: #94a3b8;
+        }
+
+        /* Filter bar: sticky, dark glass, no floating pill trick */
+        #study-filterbar-wrap {
+            position: sticky; top: 0; z-index: 25;
+            background: rgba(30,27,75,0.97);
+            backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+            padding: 8px 14px;
+        }
+        #study-filter-bar { flex-wrap: nowrap !important; }
+
+        /* Override body dotted background inside the feed area */
+        #view-study { background: #fff; }
+        /* ===== END INSTAGRAM FEED ===== */
 
 
         .avatar-option { transition: all 0.2s; border: 3px solid transparent; cursor: pointer; }
@@ -628,7 +726,7 @@
                     <div id="quiz-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <!-- Quizzes injected via JS -->
                     </div>
-                    <div id="home-material-grid" class="hidden space-y-4">
+                    <div id="home-material-grid" class="hidden rounded-2xl overflow-hidden border border-slate-100">
                         <!-- Active season's study material injected via JS -->
                     </div>
                 </div>
@@ -854,7 +952,7 @@
     <div id="view-study" class="hidden-view fade-in pb-16 app-content-offset">
 
         <!-- Hero header -->
-        <div style="background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#4c1d95 100%)" class="px-4 pt-10 pb-16 mb-0 relative overflow-hidden">
+        <div style="background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#4c1d95 100%)" class="px-4 pt-8 pb-5 relative overflow-hidden">
             <div style="position:absolute;top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,0.04);pointer-events:none"></div>
             <div style="position:absolute;bottom:-40px;left:-40px;width:160px;height:160px;border-radius:50%;background:rgba(99,102,241,0.12);pointer-events:none"></div>
             <div class="max-w-3xl mx-auto relative z-10">
@@ -874,7 +972,7 @@
                     </div>
                 </div>
                 <!-- Active season banner inside hero -->
-                <div id="study-active-season-banner" class="hidden mt-4 flex items-center gap-3 bg-white/10 backdrop-blur border border-white/20 rounded-2xl px-4 py-3">
+                <div id="study-active-season-banner" class="hidden mt-3 flex items-center gap-3 bg-white/10 backdrop-blur border border-white/20 rounded-2xl px-4 py-3">
                     <span class="text-xl">🏆</span>
                     <div class="flex-1 min-w-0">
                         <div class="text-white font-black text-sm" id="study-banner-name">Season</div>
@@ -883,23 +981,23 @@
                     <span class="px-2.5 py-1 bg-emerald-400/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-black rounded-full uppercase tracking-wide">Active</span>
                 </div>
                 <!-- Search bar in hero -->
-                <div class="relative mt-4" id="study-search-wrap">
+                <div class="relative mt-3" id="study-search-wrap">
                     <input type="text" id="study-search" oninput="window.filterStudyView()" placeholder="Search topics, titles…" class="w-full px-5 py-3 pl-11 rounded-2xl bg-white/10 backdrop-blur border border-white/20 text-white placeholder-indigo-300 font-semibold text-sm outline-none focus:bg-white/15 focus:border-white/40 transition-all">
                     <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
                 </div>
             </div>
         </div>
 
-        <!-- Filter chips — overlapping the hero bottom -->
-        <div class="max-w-3xl mx-auto px-4 -mt-5 relative z-20 mb-6" id="study-filterbar-wrap">
-            <div id="study-filter-bar" class="flex gap-2 flex-wrap overflow-x-auto pb-1 scrollbar-hide"></div>
+        <!-- Filter chips — sticky dark bar, scrolls with page until pinned -->
+        <div id="study-filterbar-wrap" class="hidden-view">
+            <div id="study-filter-bar" class="flex gap-2 overflow-x-auto"></div>
         </div>
 
-        <!-- Main content -->
-        <div class="max-w-3xl mx-auto px-4 space-y-10" id="study-content-grid"></div>
+        <!-- Feed — full width, no padding, no max-width, white background -->
+        <div id="study-content-grid"></div>
 
         <!-- Empty state -->
-        <div id="study-empty" class="hidden max-w-3xl mx-auto px-4 mt-8">
+        <div id="study-empty" class="hidden px-4 mt-8 max-w-xl mx-auto">
             <div class="text-center py-20 bg-white rounded-3xl border border-slate-200 shadow-sm">
                 <div class="text-6xl mb-4">📖</div>
                 <p class="font-black text-slate-600 text-lg" id="study-empty-title">No study material yet</p>
@@ -4613,23 +4711,26 @@
             }
             empty.classList.add('hidden');
 
-            // --- Study material, grouped by category ---
+            // --- Study material: flat feed, category dividers inline ---
             const catGroups = {};
             filteredItems.forEach(item => {
                 const key = item.category || '';
                 if (!catGroups[key]) catGroups[key] = [];
                 catGroups[key].push(item);
             });
-            const materialHTML = Object.entries(catGroups).map(([cat, items]) => `
-                ${cat ? `<div class="flex items-center gap-2 mb-3">
-                    <span class="text-[11px] font-black text-slate-400 uppercase tracking-widest">${cat}</span>
-                    <div class="flex-1 h-px bg-slate-100"></div>
-                </div>` : ''}
-                <div class="space-y-4 mb-6">
-                    ${items.map(item => item.type === 'youtube' ? renderYouTubeCard(item) : renderInstagramCard(item)).join('')}
-                </div>`).join('');
 
-            grid.innerHTML = materialHTML;
+            // Build one continuous feed — category label acts as a thin divider row
+            const feedRows = [];
+            Object.entries(catGroups).forEach(([cat, items]) => {
+                if (cat) {
+                    feedRows.push(`<div class="feed-cat-divider"><span>${cat}</span></div>`);
+                }
+                items.forEach(item => {
+                    feedRows.push(item.type === 'youtube' ? renderYouTubeCard(item) : renderInstagramCard(item));
+                });
+            });
+
+            grid.innerHTML = feedRows.join('');
             requestAnimationFrame(() => initInstagramEmbeds());
         };
 
@@ -4841,35 +4942,36 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        // ── Video Card ────────────────────────────────────────────────────────
+        // ── Video Card (Instagram-feed style) ────────────────────────────────
         const renderYouTubeCard = (item) => {
             const vid = item.youtubeId || extractYTId(item.originalUrl || '');
             const dateStr = item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : '';
             return `
-            <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-md transition-shadow" id="sc-card-${item.id}">
-                <div class="flex items-start gap-3 p-4 pb-3">
-                    <div class="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                        <svg class="w-4 h-4 text-indigo-600" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="font-black text-slate-800 text-sm leading-snug">${item.title}</div>
-                        <div class="flex items-center gap-2 mt-1 flex-wrap">
-                            ${item.category ? `<span class="px-2 py-0.5 bg-violet-100 text-violet-700 text-[10px] font-black rounded-full">${item.category}</span>` : ''}
-                            <span class="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-black rounded-full">Video Lesson</span>
-                            <span class="text-[10px] text-slate-400 font-medium">${dateStr}</span>
+            <div class="feed-post" id="sc-card-${item.id}">
+                <div class="feed-post-header">
+                    <div class="feed-avatar-ring yt">▶</div>
+                    <div class="feed-post-meta">
+                        <div class="feed-post-title">${item.title}</div>
+                        <div class="feed-post-sub">
+                            <span class="feed-tag feed-tag-yt">▶ Video</span>
+                            ${item.category ? `<span class="feed-tag feed-tag-cat">${item.category}</span>` : ''}
+                            ${dateStr ? `<span class="feed-tag-date">${dateStr}</span>` : ''}
                         </div>
                     </div>
                 </div>
-                ${vid ? `
-                <div class="mx-4 mb-4 rounded-2xl overflow-hidden shadow-sm bg-black">
-                    <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
-                        <iframe style="position:absolute;top:0;left:0;width:100%;height:100%;" src="https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1" title="${item.title}" frameborder="0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy"></iframe>
-                    </div>
-                </div>` : `<div class="mx-4 mb-4 p-3 bg-rose-50 rounded-2xl text-rose-600 font-bold text-sm text-center">⚠️ Video unavailable</div>`}
+                <div class="feed-media">
+                    ${vid
+                        ? `<div class="feed-media-ratio"><iframe src="https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1" title="${item.title}" frameborder="0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`
+                        : `<div style="padding:20px 14px;background:#fef2f2;color:#dc2626;font-weight:700;font-size:13px;text-align:center;">⚠️ Video unavailable</div>`
+                    }
+                </div>
+                <div class="feed-post-footer">
+                    <span style="font-size:11px;font-weight:700;color:#94a3b8;">YouTube · Video Lesson</span>
+                </div>
             </div>`;
         };
 
-        // ── Visual Notes Carousel Card ────────────────────────────────────────
+        // ── Visual Notes Carousel Card (Instagram-feed style) ─────────────────
         const renderInstagramCard = (item) => {
             const posts = item.posts || [];
             const multiPost = posts.length > 1;
@@ -4889,31 +4991,22 @@
                     title="Post ${i+1}"></button>`).join('') : '';
 
             return `
-            <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-md transition-shadow" id="sc-card-${item.id}">
-                <!-- Header -->
-                <div class="flex items-start gap-3 p-4 pb-3">
-                    <div class="w-9 h-9 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
-                        <svg class="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="font-black text-slate-800 text-sm leading-snug">${item.title}</div>
-                        <div class="flex items-center gap-1.5 mt-1 flex-wrap">
-                            ${item.category ? `<span class="px-2 py-0.5 bg-pink-100 text-pink-700 text-[10px] font-black rounded-full">${item.category}</span>` : ''}
-                            <span class="px-2 py-0.5 bg-violet-100 text-violet-700 text-[10px] font-black rounded-full">Study Notes</span>
-                            ${multiPost ? `<span class="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-black rounded-full">${posts.length} slides</span>` : ''}
-                            <span class="text-[10px] text-slate-400 font-medium">${dateStr}</span>
+            <div class="feed-post" id="sc-card-${item.id}">
+                <div class="feed-post-header">
+                    <div class="feed-avatar-ring insta">📸</div>
+                    <div class="feed-post-meta">
+                        <div class="feed-post-title">${item.title}</div>
+                        <div class="feed-post-sub">
+                            <span class="feed-tag feed-tag-insta">📸 Notes</span>
+                            ${item.category ? `<span class="feed-tag feed-tag-cat">${item.category}</span>` : ''}
+                            ${multiPost ? `<span class="feed-tag" style="background:#e0e7ff;color:#4338ca;">${posts.length} slides</span>` : ''}
+                            ${dateStr ? `<span class="feed-tag-date">${dateStr}</span>` : ''}
                         </div>
                     </div>
+                    ${multiPost ? `<span style="font-size:11px;font-weight:800;color:#7c3aed;white-space:nowrap;margin-left:4px;">◀ ▶</span>` : ''}
                 </div>
 
-                ${multiPost ? `
-                <div class="mx-4 mb-2 flex items-center gap-2 bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-100 rounded-2xl px-3.5 py-2.5">
-                    <span class="text-sm">👆</span>
-                    <p class="text-[11px] font-bold text-violet-700">Swipe or tap arrows to see all <strong>${posts.length} slides</strong></p>
-                </div>` : ''}
-
-                <!-- Carousel -->
-                <div class="mx-4 relative rounded-2xl overflow-hidden bg-slate-50 border border-slate-100">
+                <div class="feed-media" style="position:relative;">
                     <div style="overflow:hidden;">
                         <div class="insta-carousel-track" id="sc-track-${item.id}" style="display:flex;transition:transform 0.35s cubic-bezier(.4,0,.2,1);">
                             ${slides}
@@ -4922,19 +5015,21 @@
                     ${multiPost ? `
                     <button class="carousel-btn" id="sc-prev-${item.id}" onclick="window.carouselPrev('${item.id}',${posts.length})" disabled
                         style="position:absolute;left:10px;top:50%;transform:translateY(-50%);">
-                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 18l-6-6 6-6"/></svg>
+                        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 18l-6-6 6-6"/></svg>
                     </button>
                     <button class="carousel-btn" id="sc-next-${item.id}" onclick="window.carouselNext('${item.id}',${posts.length})"
                         style="position:absolute;right:10px;top:50%;transform:translateY(-50%);">
-                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 18l6-6-6-6"/></svg>
+                        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 18l6-6-6-6"/></svg>
                     </button>` : ''}
                 </div>
 
-                ${multiPost ? `
-                <div class="flex items-center justify-between px-5 py-3">
-                    <div class="flex items-center gap-1.5" id="sc-dots-${item.id}">${dots}</div>
-                    <span class="text-xs font-black text-slate-400" id="sc-counter-${item.id}">Post 1 of ${posts.length}</span>
-                </div>` : '<div class="pb-3"></div>'}
+                <div class="feed-post-footer">
+                    ${multiPost
+                        ? `<div class="flex items-center gap-1.5" id="sc-dots-${item.id}">${dots}</div>
+                           <span style="font-size:11px;font-weight:800;color:#94a3b8;" id="sc-counter-${item.id}">1 / ${posts.length}</span>`
+                        : `<span style="font-size:11px;font-weight:700;color:#94a3b8;">Instagram · Study Notes</span><span></span>`
+                    }
+                </div>
             </div>`;
         };
 
@@ -4948,7 +5043,7 @@
             const dotsEl = document.getElementById(`sc-dots-${itemId}`);
             if (dotsEl) dotsEl.querySelectorAll('.carousel-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
             const counter = document.getElementById(`sc-counter-${itemId}`);
-            if (counter) counter.innerText = `Post ${idx + 1} of ${total}`;
+            if (counter) counter.innerText = `${idx + 1} / ${total}`;
             const prev = document.getElementById(`sc-prev-${itemId}`);
             const next = document.getElementById(`sc-next-${itemId}`);
             if (prev) prev.disabled = idx === 0;
