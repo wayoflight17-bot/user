@@ -828,10 +828,28 @@
                 <div class="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-rose-50 shadow-sm animate-pulse">
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                 </div>
-                <h3 class="text-xl font-black text-slate-900 mb-2">Return to the Exam!</h3>
-                <p class="text-sm text-slate-500 font-medium mb-6">We noticed you left the exam window. Return now to avoid an automatic submission.</p>
-                <div id="grace-period-timer" class="text-5xl font-black text-rose-600 tabular-nums mb-2">15</div>
-                <p class="text-[11px] uppercase font-black tracking-widest text-slate-400">Seconds Remaining</p>
+                <h3 class="text-xl font-black text-slate-900 mb-2" id="grace-period-title">Return to the Exam!</h3>
+                <p class="text-sm text-slate-500 font-medium mb-6" id="grace-period-subtitle">We noticed you left the exam window (screen off, call, or switched apps). Return within 15 seconds or your exam will be automatically submitted.</p>
+
+                <!-- Counting-down state: shown while we still think the page is hidden. The user
+                     generally can't see this themselves if the screen was truly off, but it covers
+                     the alt-tab / picture-in-picture / partially-covered-window cases. -->
+                <div id="grace-period-counting">
+                    <div id="grace-period-timer" class="text-5xl font-black text-rose-600 tabular-nums mb-2">15</div>
+                    <p class="text-[11px] uppercase font-black tracking-widest text-slate-400">Seconds Remaining</p>
+                </div>
+
+                <!-- Returned-in-time state: requires an explicit tap to resume, so the warning is
+                     actually seen and acknowledged rather than silently vanishing the instant the
+                     page regains focus. -->
+                <div id="grace-period-returned" class="hidden-view">
+                    <div class="mb-5 px-4 py-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs font-bold text-amber-800">
+                        ⚠️ This counts as a violation and has been recorded with your exam attempt.
+                    </div>
+                    <button onclick="window.acknowledgeGracePeriodReturn()" class="w-full py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition-all">
+                        Continue Exam
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -1794,56 +1812,131 @@
             }
         };
 
-        // Tab switch / fullscreen exit
+        // Tab switch / fullscreen exit / screen off / call received — all of these cause the
+        // page to be backgrounded, which reliably fires 'visibilitychange'. We use a wall-clock
+        // deadline (not a tick counter) because browsers throttle or fully suspend setInterval
+        // while a page is hidden/backgrounded — a screen-off timer counted purely by interval
+        // ticks would not reliably enforce a real 15-second limit. The deadline is checked the
+        // instant the page becomes visible again, so even if the interval never ticked at all
+        // while backgrounded, returning late still gets caught and ends the exam immediately.
         document.addEventListener('visibilitychange', () => {
             if(activeSession && document.hidden) {
                 startGracePeriod('tab');
             } else if(activeSession && !document.hidden) {
-                cancelGracePeriod();
+                checkGracePeriodOnReturn();
             }
+        });
+
+        // Some mobile browsers fire 'pagehide'/'pageshow' (e.g. backgrounding for an incoming
+        // call) more reliably than 'visibilitychange' in certain situations — listen to both
+        // for robustness, all routed through the same deadline-based logic.
+        window.addEventListener('pagehide', () => {
+            if(activeSession) startGracePeriod('background');
+        });
+        window.addEventListener('pageshow', () => {
+            if(activeSession) checkGracePeriodOnReturn();
+        });
+        window.addEventListener('focus', () => {
+            if(activeSession) checkGracePeriodOnReturn();
         });
 
         document.addEventListener('fullscreenchange', () => {
             if(activeSession && !document.fullscreenElement) {
                 startGracePeriod('fullscreen');
             } else if(activeSession && document.fullscreenElement) {
-                cancelGracePeriod();
+                checkGracePeriodOnReturn();
             }
         });
 
         const GRACE_PERIOD_SECS = 15;
 
         const startGracePeriod = (reason) => {
-            if(!activeSession || activeSession.graceTimerId) return;
+            if(!activeSession) return;
+
+            // Already running — don't reset the deadline just because a second background
+            // signal fired (e.g. visibilitychange AND pagehide both firing for the same event).
+            if (activeSession.graceDeadline) return;
 
             activeSession.violations = activeSession.violations || [];
             activeSession.violations.push({ reason, at: Date.now() });
 
-            let remaining = GRACE_PERIOD_SECS;
+            activeSession.graceDeadline = Date.now() + GRACE_PERIOD_SECS * 1000;
+
             const overlay = document.getElementById('grace-period-overlay');
             const timerEl = document.getElementById('grace-period-timer');
-            timerEl.innerText = remaining;
+            const countingEl = document.getElementById('grace-period-counting');
+            const returnedEl = document.getElementById('grace-period-returned');
+            timerEl.innerText = GRACE_PERIOD_SECS;
+            countingEl.classList.remove('hidden-view');
+            returnedEl.classList.add('hidden-view');
             overlay.classList.remove('hidden-view');
 
+            if (activeSession.graceTimerId) clearInterval(activeSession.graceTimerId);
             activeSession.graceTimerId = setInterval(() => {
-                remaining--;
-                if(remaining <= 0) {
+                if (!activeSession || !activeSession.graceDeadline) {
+                    clearInterval(activeSession.graceTimerId);
+                    return;
+                }
+                const remainingMs = activeSession.graceDeadline - Date.now();
+                if (remainingMs <= 0) {
                     clearInterval(activeSession.graceTimerId);
                     activeSession.graceTimerId = null;
+                    activeSession.graceDeadline = null;
                     overlay.classList.add('hidden-view');
-                    showToast(`⚠️ Grace period expired. Auto-submitting your exam.`, "🚫");
+                    showToast(`⚠️ You didn't return in time. Your exam has been submitted.`, "🚫");
                     window.submitExam();
                     return;
                 }
-                timerEl.innerText = remaining;
-            }, 1000);
+                timerEl.innerText = Math.ceil(remainingMs / 1000);
+            }, 250); // tick faster than 1s so the displayed number feels accurate once visible again
         };
 
-        const cancelGracePeriod = () => {
-            if(!activeSession || !activeSession.graceTimerId) return;
-            clearInterval(activeSession.graceTimerId);
-            activeSession.graceTimerId = null;
-            document.getElementById('grace-period-overlay').classList.add('hidden-view');
+        // Called the instant the page becomes visible/focused again. Because setInterval can be
+        // throttled or fully paused while the page was hidden, the interval tick above cannot be
+        // trusted to have caught an expired deadline in time — so we check the real wall-clock
+        // deadline directly here too, the moment we get a signal the user is back.
+        const checkGracePeriodOnReturn = () => {
+            if(!activeSession || !activeSession.graceDeadline) return;
+            const remainingMs = activeSession.graceDeadline - Date.now();
+            if (remainingMs <= 0) {
+                // Time already expired while backgrounded — end the exam now, don't wait for
+                // the interval to notice.
+                if (activeSession.graceTimerId) { clearInterval(activeSession.graceTimerId); activeSession.graceTimerId = null; }
+                activeSession.graceDeadline = null;
+                document.getElementById('grace-period-overlay').classList.add('hidden-view');
+                showToast(`⚠️ You didn't return in time. Your exam has been submitted.`, "🚫");
+                window.submitExam();
+                return;
+            }
+            // Returned within the 15-second window: stop the countdown, but don't dismiss the
+            // overlay automatically — show a "Continue Exam" confirmation so the warning is
+            // actually seen and consciously acknowledged before they resume.
+            if (activeSession.graceTimerId) { clearInterval(activeSession.graceTimerId); activeSession.graceTimerId = null; }
+            activeSession.graceDeadline = null;
+            const countingEl = document.getElementById('grace-period-counting');
+            const returnedEl = document.getElementById('grace-period-returned');
+            const titleEl = document.getElementById('grace-period-title');
+            const subtitleEl = document.getElementById('grace-period-subtitle');
+            if (countingEl) countingEl.classList.add('hidden-view');
+            if (returnedEl) returnedEl.classList.remove('hidden-view');
+            if (titleEl) titleEl.innerText = 'Welcome Back!';
+            if (subtitleEl) subtitleEl.innerText = "You returned in time — tap below to continue where you left off.";
+        };
+
+        // Explicit "Continue Exam" tap — only this dismisses the overlay once they've returned
+        // in time, so the warning can't be missed or skipped by accident.
+        window.acknowledgeGracePeriodReturn = () => {
+            const overlay = document.getElementById('grace-period-overlay');
+            if (overlay) overlay.classList.add('hidden-view');
+            // Reset overlay text/state back to defaults for the next time it's needed.
+            const titleEl = document.getElementById('grace-period-title');
+            const subtitleEl = document.getElementById('grace-period-subtitle');
+            const countingEl = document.getElementById('grace-period-counting');
+            const returnedEl = document.getElementById('grace-period-returned');
+            if (titleEl) titleEl.innerText = 'Return to the Exam!';
+            if (subtitleEl) subtitleEl.innerText = 'We noticed you left the exam window (screen off, call, or switched apps). Return within 15 seconds or your exam will be automatically submitted.';
+            if (countingEl) countingEl.classList.remove('hidden-view');
+            if (returnedEl) returnedEl.classList.add('hidden-view');
             showToast("✅ Welcome back! Your exam continues.", "👍");
         };
 
@@ -3130,6 +3223,7 @@
                     timerSecs: resumable.timerSecs || 0,
                     intervalId: null,
                     graceTimerId: null,
+                    graceDeadline: null,
                     violations: resumable.violations || [],
                     saveIntervalId: null
                 };
@@ -3156,6 +3250,7 @@
                     timerSecs: 0,
                     intervalId: null,
                     graceTimerId: null,
+                    graceDeadline: null,
                     violations: [],
                     saveIntervalId: null
                 };
@@ -3513,6 +3608,7 @@
             if(!activeSession) return;
             clearInterval(activeSession.intervalId);
             if(activeSession.graceTimerId) clearInterval(activeSession.graceTimerId);
+            activeSession.graceDeadline = null;
             if(activeSession.saveIntervalId) clearInterval(activeSession.saveIntervalId);
             if(devToolsInterval) { clearInterval(devToolsInterval); devToolsInterval = null; }
             document.getElementById('grace-period-overlay').classList.add('hidden-view');
