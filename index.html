@@ -22,6 +22,18 @@
             background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
             background-size: 20px 20px;
             min-height: 100vh;
+            /* Stops the whole-page rubber-band bounce from fighting the fixed bottom
+               tab bar on phones — a common source of "janky" feeling navigation. */
+            overscroll-behavior-y: contain;
+        }
+
+        /* Crisp, lag-free taps on the tab bar / sidebar: no gray flash, no iOS
+           300ms double-tap-to-zoom delay, no accidental text selection on rapid taps. */
+        .sidebar-tab, .bottombar-tab, .nav-tab {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         .glass {
@@ -29,6 +41,15 @@
             backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.4);
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Momentum scrolling + contained overscroll for every internal scroll panel
+           (leaderboard, filter chips, modals, avatar grids, etc.) — without this,
+           nested scroll areas can feel sticky on iOS and bounce-chain into the
+           page behind them on fast swipes. */
+        [class*="overflow-y-auto"], [class*="overflow-x-auto"] {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
         }
 
         .hidden-view { display: none !important; }
@@ -1848,7 +1869,11 @@
             const target = document.getElementById(id);
             if(target) {
                 target.classList.remove('hidden-view');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                // Instant, not smooth: the page height changes the moment views are
+                // swapped, and animating the scroll while that reflow happens is what
+                // produces the stutter/jump on phones. A plain jump-to-top is what
+                // native tab bars (Instagram included) actually do.
+                window.scrollTo(0, 0);
             }
 
             // Update nav tabs (sidebar + bottom bar both use data-tab, so one loop covers both)
@@ -1876,25 +1901,31 @@
                 topbar?.classList.remove('app-topbar-offset');
             }
 
-            // Render people when switching to people view
-            if (id === 'view-people') {
-                window.renderPeople();
-            }
-            // Render certificates when switching to certificates view
-            if (id === 'view-certificates') {
-                window.renderMyCertificates();
-            }
-            // Render study content — always start at the season list when (re)entering the tab
-            if (id === 'view-study') {
-                studySelectedSeasonId = null;
-                studyFilterActive = 'all';
-                window.renderStudyView();
-            }
-            // Render test content — always start at the season list when (re)entering the tab
-            if (id === 'view-test') {
-                testSelectedSeasonId = null;
-                window.renderTestView();
-            }
+            // The heavy list-building work below is deferred a frame so the tab
+            // highlight + view swap above gets painted first — on phones, doing it
+            // all synchronously makes the tap feel like it froze for a moment before
+            // anything visibly happens.
+            requestAnimationFrame(() => {
+                // Render people when switching to people view
+                if (id === 'view-people') {
+                    window.renderPeople();
+                }
+                // Render certificates when switching to certificates view
+                if (id === 'view-certificates') {
+                    window.renderMyCertificates();
+                }
+                // Render study content — always start at the season list when (re)entering the tab
+                if (id === 'view-study') {
+                    studySelectedSeasonId = null;
+                    studyFilterActive = 'all';
+                    window.renderStudyView();
+                }
+                // Render test content — always start at the season list when (re)entering the tab
+                if (id === 'view-test') {
+                    testSelectedSeasonId = null;
+                    window.renderTestView();
+                }
+            });
         };
 
         const showToast = (msg, icon = '✅') => {
