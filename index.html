@@ -494,7 +494,7 @@
                         <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Username <span class="normal-case font-medium">(unique, like @yourname — lowercase letters, numbers, underscore only)</span></label>
                         <div class="relative">
                             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black">@</span>
-                            <input type="text" id="onboard-username" oninput="window.checkUsernameAvailability('onboard-username', 'onboard-username-status')" class="w-full pl-9 pr-4 py-3.5 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none transition-colors font-bold text-slate-700" placeholder="yourname" autocomplete="off" spellcheck="false">
+                            <input type="text" id="onboard-username" data-status-id="onboard-username-status" oninput="window.checkUsernameAvailability('onboard-username', 'onboard-username-status')" onbeforeinput="window.enforceHandleInput(event)" onpaste="window.enforceHandlePaste(event)" class="w-full pl-9 pr-4 py-3.5 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none transition-colors font-bold text-slate-700" placeholder="yourname" autocomplete="off" spellcheck="false" inputmode="text">
                         </div>
                         <div id="onboard-username-status" class="text-xs font-bold mt-1.5 ml-1 hidden"></div>
                     </div>
@@ -1198,7 +1198,7 @@
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Username <span class="normal-case font-medium">(unique @handle — lowercase letters, numbers, underscore only)</span></label>
                             <div class="relative">
                                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black">@</span>
-                                <input id="profile-username" type="text" autocomplete="off" spellcheck="false" oninput="window.checkUsernameAvailability('profile-username', 'profile-username-status', currentUser?.uid)" class="w-full pl-9 pr-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none transition-colors font-bold text-slate-700">
+                                <input id="profile-username" type="text" data-status-id="profile-username-status" autocomplete="off" spellcheck="false" oninput="window.checkUsernameAvailability('profile-username', 'profile-username-status', currentUser?.uid)" onbeforeinput="window.enforceHandleInput(event)" onpaste="window.enforceHandlePaste(event)" class="w-full pl-9 pr-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none transition-colors font-bold text-slate-700" inputmode="text">
                             </div>
                             <div id="profile-username-status" class="text-xs font-bold mt-1.5 ml-1 hidden"></div>
                         </div>
@@ -1418,11 +1418,11 @@
                 <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
             </div>
             <h2 class="text-2xl font-black text-slate-900 mb-2">Choose Your Username</h2>
-            <p class="text-slate-500 text-sm font-medium mb-6">A username is required to use the platform. It's how others find you — like Instagram. Lowercase letters, numbers, and underscore only.</p>
+            <p class="text-slate-500 text-sm font-medium mb-6" id="ug-gate-desc">A username is required to use the platform. It's how others find you — like Instagram. Lowercase letters, numbers, and underscore only.</p>
             <div id="ug-error" class="hidden bg-rose-100 border border-rose-200 text-rose-600 text-xs font-bold p-3 rounded-xl mb-4"></div>
             <div class="relative mb-2">
                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-lg">@</span>
-                <input type="text" id="ug-username-input" oninput="window.checkUsernameGate()" class="w-full pl-10 pr-4 py-4 rounded-xl bg-slate-50 border-2 border-slate-200 focus:border-indigo-500 outline-none font-bold text-slate-700 text-lg" placeholder="yourname" autocomplete="off" spellcheck="false">
+                <input type="text" id="ug-username-input" data-status-id="ug-status" oninput="window.checkUsernameGate()" onbeforeinput="window.enforceHandleInput(event)" onpaste="window.enforceHandlePaste(event)" class="w-full pl-10 pr-4 py-4 rounded-xl bg-slate-50 border-2 border-slate-200 focus:border-indigo-500 outline-none font-bold text-slate-700 text-lg" placeholder="yourname" autocomplete="off" spellcheck="false" inputmode="text">
             </div>
             <div id="ug-status" class="text-xs font-bold mb-6 ml-1 h-4"></div>
             <button onclick="window.saveUsernameFromGate()" class="w-full py-4 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 transition-all shadow-xl active:scale-95 text-lg">
@@ -2081,7 +2081,74 @@
 
         // ---- Unique Username helpers ----
         // @handle rule: lowercase letters, numbers, and underscore only.
+        const HANDLE_VALID_RE = /^[a-z0-9_]*$/;
         const normalizeUsername = (raw) => (raw || '').toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
+
+        /**
+         * Hard-blocks any character that is not a lowercase letter, digit, or underscore.
+         * Uppercase letters are silently converted to lowercase.
+         * Everything else triggers a shake + inline error and is dropped.
+         * Attach this as a `beforeinput` handler on any @handle input.
+         */
+        window.enforceHandleInput = (event) => {
+            const data = event.data;
+            if (!data) return; // deletions / paste handled separately
+
+            // Convert uppercase → lowercase silently
+            const lower = data.toLowerCase();
+            if (!HANDLE_VALID_RE.test(lower)) {
+                event.preventDefault();
+                const input = event.target;
+                // Show/refresh error badge
+                const statusId = input.dataset.statusId;
+                const statusEl = statusId ? document.getElementById(statusId) : null;
+                const msg = 'Only lowercase letters (a–z), numbers (0–9) and underscore (_) are allowed.';
+                if (statusEl) {
+                    statusEl.textContent = msg;
+                    statusEl.className = 'text-xs font-bold mt-1.5 ml-1 text-rose-500';
+                }
+                // Shake the input
+                input.classList.remove('shake');
+                void input.offsetWidth; // reflow to restart animation
+                input.classList.add('shake');
+                setTimeout(() => input.classList.remove('shake'), 450);
+                return;
+            }
+            // If uppercase was typed, replace with lowercase
+            if (lower !== data) {
+                event.preventDefault();
+                const input = event.target;
+                const start = input.selectionStart;
+                const end = input.selectionEnd;
+                input.value = input.value.slice(0, start) + lower + input.value.slice(end);
+                input.setSelectionRange(start + lower.length, start + lower.length);
+                // Trigger oninput manually so availability check fires
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        };
+
+        /**
+         * On paste: strip every char that isn't [a-z0-9_] (after lowercasing) and warn if something was removed.
+         */
+        window.enforceHandlePaste = (event) => {
+            event.preventDefault();
+            const raw = (event.clipboardData || window.clipboardData).getData('text');
+            const cleaned = raw.toLowerCase().replace(/[^a-z0-9_]/g, '');
+            const input = event.target;
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            input.value = input.value.slice(0, start) + cleaned + input.value.slice(end);
+            input.setSelectionRange(start + cleaned.length, start + cleaned.length);
+            if (cleaned !== raw.toLowerCase()) {
+                const statusId = input.dataset.statusId;
+                const statusEl = statusId ? document.getElementById(statusId) : null;
+                if (statusEl) {
+                    statusEl.textContent = 'Some characters were removed — only a–z, 0–9 and _ are allowed.';
+                    statusEl.className = 'text-xs font-bold mt-1.5 ml-1 text-amber-500';
+                }
+            }
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        };
 
         const isUsernameTaken = async (uname, excludeUid = null) => {
             try {
@@ -4093,11 +4160,36 @@
         // ========== USERNAME GATE (mandatory, like Instagram) ==========
         let _usernameGateTimer = null;
 
-        const checkAndShowUsernameGate = () => {
+        const checkAndShowUsernameGate = async () => {
             if (!userData) return;
-            if (userData.username && userData.username.length >= 3) return; // already has one
+            const uname = userData.username || '';
+            const isMissing = uname.length < 3;
+            // Catches legacy/imported handles that pre-date the lowercase/number/underscore-only rule
+            const isInvalidFormat = !isMissing && !HANDLE_VALID_RE.test(uname);
+            // Catches legacy handles that collide with someone else's (uniqueness wasn't always enforced)
+            const isDuplicate = !isMissing && !isInvalidFormat && await isUsernameTaken(uname, currentUser?.uid);
+            if (!isMissing && !isInvalidFormat && !isDuplicate) return; // already has a valid, unique handle
+
+            const overlay = document.getElementById('username-gate-overlay');
+            const titleEl = overlay.querySelector('h2');
+            const descEl = overlay.querySelector('#ug-gate-desc');
+            const inputEl = document.getElementById('ug-username-input');
+            if (isInvalidFormat) {
+                titleEl.innerText = 'Update Your Username';
+                descEl.innerText = `Your current handle "@${uname}" doesn't follow our @handle rules. Please choose a new one — lowercase letters, numbers, and underscore only.`;
+                // Pre-fill with a cleaned-up suggestion so they're not starting from scratch
+                if (inputEl) inputEl.value = normalizeUsername(uname);
+            } else if (isDuplicate) {
+                titleEl.innerText = 'Username Already Taken';
+                descEl.innerText = `"@${uname}" is now used by another account too. Usernames must be unique — please choose a different one.`;
+                if (inputEl) inputEl.value = '';
+            } else {
+                titleEl.innerText = 'Choose Your Username';
+                descEl.innerText = "A username is required to use the platform. It's how others find you — like Instagram. Lowercase letters, numbers, and underscore only.";
+                if (inputEl) inputEl.value = '';
+            }
             // Show gate
-            document.getElementById('username-gate-overlay').style.display = 'flex';
+            overlay.style.display = 'flex';
         };
 
         window.checkUsernameGate = () => {
