@@ -1386,7 +1386,7 @@
                 <button onclick="window.closeCertViewModal()" class="w-9 h-9 shrink-0 flex items-center justify-center bg-slate-200 hover:bg-rose-100 hover:text-rose-600 rounded-full font-bold transition-colors">✕</button>
             </div>
             <div class="p-6 overflow-y-auto flex-1 bg-slate-50 flex items-center justify-center" id="cert-modal-body"></div>
-            <div class="p-4 border-t border-slate-200">
+            <div class="p-4 border-t border-slate-200" id="cert-modal-download-wrap">
                 <a id="cert-modal-download" href="#" download="certificate" class="block w-full text-center py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors">⬇ Download</a>
             </div>
         </div>
@@ -4007,21 +4007,20 @@
                 body.innerHTML = `<div class="cert-protected-wrapper w-full flex items-center justify-center"><img src="${c.fileData}" class="max-h-[60vh] w-full object-contain rounded-xl shadow-md bg-white" ondragstart="return false;"></div>`;
             }
 
-            // Download: only allowed for the certificate's owner
+            // Download: only allowed for the certificate's owner — hidden entirely for everyone else
             const dl = document.getElementById('cert-modal-download');
+            const dlWrap = document.getElementById('cert-modal-download-wrap');
             const isOwner = currentUser && c.studentId === currentUser.uid;
             if (isOwner) {
                 dl.href = c.fileData;
                 dl.download = `${certId}${c.fileType === 'pdf' ? '.pdf' : '.jpg'}`;
-                dl.className = 'block w-full text-center py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors';
                 dl.onclick = null;
-                dl.removeAttribute('data-blocked');
+                dlWrap.classList.remove('hidden');
             } else {
                 dl.removeAttribute('href');
                 dl.removeAttribute('download');
-                dl.setAttribute('data-blocked', '1');
-                dl.className = 'block w-full text-center py-3 bg-slate-200 text-slate-400 font-bold rounded-xl cursor-not-allowed';
-                dl.onclick = (e) => { e.preventDefault(); showToast("⚠️ Only the certificate recipient can download this.", "🔒"); };
+                dl.onclick = null;
+                dlWrap.classList.add('hidden');
             }
 
             document.getElementById('modal-cert-view').classList.remove('hidden-view');
