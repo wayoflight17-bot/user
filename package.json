@@ -1,18 +1,9 @@
 {
-  "name": "way-of-light-notification-functions",
-  "description": "Cloud Functions that send push notifications for new seasons, tests, study material, and winner announcements.",
-  "main": "index.js",
-  "engines": {
-    "node": "20"
-  },
-  "scripts": {
-    "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log"
-  },
+  "name": "way-of-light-notification-checker",
+  "private": true,
+  "description": "Run by GitHub Actions on a schedule to send push notifications for new content.",
   "dependencies": {
     "firebase-admin": "^12.1.0",
-    "firebase-functions": "^5.0.0",
     "web-push": "^3.6.7"
-  },
-  "private": true
+  }
 }
