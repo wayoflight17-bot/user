@@ -1307,6 +1307,24 @@
                         <!-- Injected via JS -->
                     </div>
                 </div>
+
+                <!-- Push Notifications opt-in -->
+                <div class="pt-6 border-t border-slate-100">
+                    <div class="flex items-center justify-between gap-4 bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="font-bold text-slate-800 text-sm">Push Notifications</div>
+                                <div class="text-xs text-slate-400 font-semibold" id="notif-status-text">Get notified about new seasons, tests, study material & winners</div>
+                            </div>
+                        </div>
+                        <button id="notif-toggle-btn" onclick="window.toggleNotificationSubscription()" class="shrink-0 px-4 py-2 rounded-xl text-xs font-black transition-all bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95">
+                            Enable
+                        </button>
+                    </div>
+                </div>
             </div>
             <div class="p-6 bg-white border-t border-slate-100 space-y-3 shrink-0">
                 <div id="profile-error" class="hidden-view bg-rose-100 border border-rose-200 text-rose-600 text-xs font-bold p-3 rounded-xl"></div>
@@ -1532,7 +1550,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, EmailAuthProvider, linkWithCredential, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDocs, getDoc, query, where, onSnapshot, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, getDocs, getDoc, query, where, onSnapshot, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAdkg78FvNF42a5YCmPsZiaE3ZePeC8Vww",
@@ -1635,6 +1653,163 @@
         const clearGraceNotification = () => {
             sendToServiceWorker({ type: 'CLEAR_GRACE_NOTIFICATION' });
         };
+
+        // ===========================================================================
+        // PUSH NOTIFICATIONS — new seasons, tests, study material, winner announcements
+        // ===========================================================================
+        // This is genuine push: it works even if the site/browser is fully closed, unlike the
+        // exam grace-period notification above (which only fires while a tab is open somewhere).
+        // That's possible here because this flow creates a PushSubscription registered with the
+        // browser's own push service (e.g. FCM for Chrome) — the browser itself wakes the Service
+        // Worker on the OS's behalf when a push arrives, with no tab needing to be open at all.
+        //
+        // IMPORTANT — this still requires a server-side piece this file cannot provide:
+        // someone has to actually SEND the push when an admin publishes new content. That's the
+        // Cloud Functions code (see functions/index.js, deployed separately via the Firebase
+        // CLI). Everything below is the client half: getting the user's permission, creating
+        // their subscription, and saving it somewhere the Cloud Function can read it from.
+        //
+        // VAPID_PUBLIC_KEY: replace this placeholder with YOUR real VAPID public key before this
+        // can work. Generate a keypair with `npx web-push generate-vapid-keys` (this is also
+        // printed by the included functions/index.js setup instructions). The PUBLIC key goes
+        // here; the PRIVATE key must only ever live in your Cloud Functions config, never in this
+        // file — anyone can view this file's source, so it cannot hold a secret.
+        const VAPID_PUBLIC_KEY = 'PASTE_YOUR_VAPID_PUBLIC_KEY_HERE';
+
+        const urlBase64ToUint8Array = (base64String) => {
+            const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+            const rawData = atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; i++) outputArray[i] = rawData.charCodeAt(i);
+            return outputArray;
+        };
+
+        const getPushSubscriptionDoc = (uid) => getPublicDoc('push_subscriptions', uid);
+
+        // Reflects the user's actual current subscription state (not just what they last
+        // clicked) onto the toggle button — called whenever the profile modal opens.
+        window.refreshNotificationToggleUI = async () => {
+            const btn = document.getElementById('notif-toggle-btn');
+            const statusText = document.getElementById('notif-status-text');
+            if (!btn || !statusText) return;
+
+            if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+                btn.innerText = 'Not supported';
+                btn.disabled = true;
+                btn.className = 'shrink-0 px-4 py-2 rounded-xl text-xs font-black bg-slate-200 text-slate-400 cursor-not-allowed';
+                statusText.innerText = "Your browser doesn't support push notifications.";
+                return;
+            }
+            if (Notification.permission === 'denied') {
+                btn.innerText = 'Blocked';
+                btn.disabled = true;
+                btn.className = 'shrink-0 px-4 py-2 rounded-xl text-xs font-black bg-slate-200 text-slate-400 cursor-not-allowed';
+                statusText.innerText = 'Notifications are blocked in your browser settings. Enable them there to use this.';
+                return;
+            }
+
+            btn.disabled = false;
+            try {
+                const reg = swRegistration || await navigator.serviceWorker.ready;
+                const sub = await reg.pushManager.getSubscription();
+                if (sub) {
+                    btn.innerText = 'Disable';
+                    btn.className = 'shrink-0 px-4 py-2 rounded-xl text-xs font-black bg-slate-100 text-slate-600 hover:bg-rose-100 hover:text-rose-600 active:scale-95 transition-all border border-slate-200';
+                    statusText.innerText = "You're subscribed — you'll be notified about new seasons, tests, material & winners.";
+                } else {
+                    btn.innerText = 'Enable';
+                    btn.className = 'shrink-0 px-4 py-2 rounded-xl text-xs font-black bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 transition-all';
+                    statusText.innerText = 'Get notified about new seasons, tests, study material & winners';
+                }
+            } catch (e) {
+                console.warn('Could not read push subscription state:', e);
+            }
+        };
+
+        window.toggleNotificationSubscription = async () => {
+            if (!currentUser) return;
+            const btn = document.getElementById('notif-toggle-btn');
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                showToast('Push notifications are not supported on this browser.', '⚠️');
+                return;
+            }
+
+            try {
+                const reg = swRegistration || await navigator.serviceWorker.ready;
+                const existing = await reg.pushManager.getSubscription();
+
+                if (existing) {
+                    // --- Unsubscribe ---
+                    await existing.unsubscribe();
+                    await deleteDoc(getPushSubscriptionDoc(currentUser.uid)).catch(() => {});
+                    showToast('Notifications turned off.', '🔕');
+                    await window.refreshNotificationToggleUI();
+                    return;
+                }
+
+                // --- Subscribe ---
+                if (VAPID_PUBLIC_KEY.startsWith('PASTE_')) {
+                    showToast('Push notifications are not configured yet (missing VAPID key).', '⚠️');
+                    return;
+                }
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                    showToast('Notification permission was not granted.', '🔕');
+                    return;
+                }
+                const sub = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                });
+
+                // Store the subscription where the Cloud Function can find it. Keyed by uid so
+                // re-subscribing on the same account just overwrites the old endpoint (e.g. if a
+                // browser rotates its push endpoint, which does happen periodically).
+                await setDoc(getPushSubscriptionDoc(currentUser.uid), {
+                    uid: currentUser.uid,
+                    subscription: sub.toJSON(),
+                    name: userData?.name || '',
+                    updatedAt: Date.now()
+                });
+
+                showToast('Notifications enabled! 🔔', '✅');
+                await window.refreshNotificationToggleUI();
+            } catch (e) {
+                console.error('Push subscription error:', e);
+                showToast('Could not enable notifications. Please try again.', '⚠️');
+            }
+        };
+
+        // Tapping a content push notification (new season/test/material/winners) opens this app
+        // with a URL fragment set by the Cloud Function's payload (see functions/index.js —
+        // url: '#test', '#study', '#dashboard'). This routes a freshly-loaded or already-open
+        // tab to the right section once the user's data is ready, instead of just landing on
+        // whatever the default view happens to be. Safe to call even with no/unknown hash —
+        // it simply does nothing and the normal default landing view applies.
+        window.routeFromNotificationHash = () => {
+            const hash = (window.location.hash || '').replace('#', '').trim();
+            const hashToView = {
+                test: 'view-test',
+                study: 'view-study',
+                dashboard: 'view-dashboard',
+                certificates: 'view-certificates',
+                people: 'view-people'
+            };
+            const targetView = hashToView[hash];
+            if (!targetView) return;
+            window.switchView(targetView);
+            // Clear the hash after routing so a later manual refresh doesn't re-trigger it.
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+        };
+
+        // Covers the case where the tab was ALREADY open in the background when a notification
+        // was tapped — the Service Worker navigates that existing tab's hash rather than doing a
+        // fresh page load, so routeFromNotificationHash (called above only once, at initial
+        // login) needs this listener to re-run for that scenario too.
+        window.addEventListener('hashchange', () => {
+            if (currentUser && userData) window.routeFromNotificationHash();
+        });
 
 
         let examState = {
@@ -2611,6 +2786,7 @@
                         const snap = await getDoc(userRef);
                         if(snap.exists()) {
                             setupRealtimeData();
+                            window.routeFromNotificationHash();
                         } else {
                             pendingGoogleUser = user;
                             document.getElementById('onboard-name').value = user.displayName || '';
@@ -3040,6 +3216,7 @@
             const profEid = document.getElementById('profile-enrollment-id');
             if(profEid) profEid.innerText = userData.enrollmentId || '--';
             setImgSrc('prof-avatar-preview', tempAvatar);
+            window.refreshNotificationToggleUI();
             
             const grid = document.getElementById('profile-avatar-grid');
             grid.innerHTML = AVATARS.map(url => {
