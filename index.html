@@ -718,6 +718,20 @@
         <!-- EXAM SESSION -->
         <!-- EXAM VIEW - DUOLINGO STYLE -->
         <div id="view-exam" class="hidden-view fade-in bg-gradient-to-b from-slate-50 to-white min-h-screen pb-20 app-content-offset">
+
+            <!-- Input lock overlay: shown the INSTANT termination begins (e.g. the 15-second
+                 return window expired), before any async grading/saving work runs. This sits
+                 above every control in the exam screen so no tap can reach an answer option,
+                 question-nav button, or submit button while the session is being closed out. -->
+            <div id="exam-lock-overlay" class="hidden-view fixed inset-0 z-[70] bg-white/70 backdrop-blur-sm flex items-center justify-center">
+                <div class="bg-white rounded-3xl shadow-2xl px-8 py-7 text-center max-w-xs mx-4 border border-slate-200">
+                    <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    </div>
+                    <p class="font-black text-slate-800">Ending your exam…</p>
+                    <p class="text-xs text-slate-400 font-semibold mt-1">Input is locked while your test is submitted.</p>
+                </div>
+            </div>
             
             <!-- TOP BAR: Jump-to-question, Progress, Answered, Timer -->
             <div class="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
@@ -3547,6 +3561,7 @@
         // question and never auto-advances, so the student can freely change their
         // mind, and can come back to any earlier question (via Previous) and edit it.
         window.pickAnswer = (val, type) => {
+            if (!activeSession || activeSession.terminating) return;
             const idx = activeSession.currentIndex;
 
             // Toggle off if tapping the same answer again, otherwise set/replace it
@@ -3557,6 +3572,7 @@
         };
 
         window.updateMatchAnswer = (key, val) => {
+            if (!activeSession || activeSession.terminating) return;
             if(!activeSession.userAnswers[activeSession.currentIndex] || typeof activeSession.userAnswers[activeSession.currentIndex] !== 'object') {
                 activeSession.userAnswers[activeSession.currentIndex] = {};
             }
@@ -3565,6 +3581,7 @@
         };
 
         window.navQuestion = (dir) => {
+            if (!activeSession || activeSession.terminating) return;
             activeSession.currentIndex += dir;
             renderActiveQuestion();
             saveProgress();
@@ -3607,7 +3624,7 @@
         };
 
         window.goToQuestion = (i) => {
-            if (!activeSession) return;
+            if (!activeSession || activeSession.terminating) return;
             activeSession.currentIndex = i;
             renderActiveQuestion();
             saveProgress();
@@ -3615,7 +3632,13 @@
         };
 
         window.submitExam = async (cheatingFlagOverride = false) => {
-            if(!activeSession) return;
+            if(!activeSession || activeSession.terminating) return;
+            // Lock input IMMEDIATELY, synchronously, before any grading or async Firestore work
+            // begins — this is what guarantees "further input is locked" the instant termination
+            // starts, not just once the (async) submission has actually finished.
+            activeSession.terminating = true;
+            document.getElementById('exam-lock-overlay')?.classList.remove('hidden-view');
+
             clearInterval(activeSession.intervalId);
             if(activeSession.graceTimerId) clearInterval(activeSession.graceTimerId);
             activeSession.graceDeadline = null;
@@ -5350,6 +5373,7 @@
         };
 
         window.clearFillAnswer = (idx) => {
+            if (!activeSession || activeSession.terminating) return;
             activeSession.userAnswers[idx] = '';
             saveProgress();
             renderActiveQuestion();
@@ -5359,6 +5383,7 @@
         let matchFirstSelected = null;
 
         window.matchSelectLeft = (item) => {
+            if (!activeSession || activeSession.terminating) return;
             // If clicking same item that's already selected, deselect it
             if (matchFirstSelected && matchFirstSelected.item === item && matchFirstSelected.side === 'left') {
                 matchFirstSelected = null;
@@ -5393,6 +5418,7 @@
         };
 
         window.matchSelectRight = (item) => {
+            if (!activeSession || activeSession.terminating) return;
             // If clicking same item that's already selected, deselect it
             if (matchFirstSelected && matchFirstSelected.item === item && matchFirstSelected.side === 'right') {
                 matchFirstSelected = null;
@@ -5427,6 +5453,7 @@
         };
 
         window.matchRemovePair = (leftItem) => {
+            if (!activeSession || activeSession.terminating) return;
             const idx = activeSession.currentIndex;
             const userAnswers = activeSession.userAnswers[idx] || {};
             delete userAnswers[leftItem];
